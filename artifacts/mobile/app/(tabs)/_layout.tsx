@@ -7,6 +7,7 @@ import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import React from 'react';
 import { Platform, StyleSheet, View } from 'react-native';
 import { Colors } from '@/constants/colors';
+import { OrderProvider } from '@/context/OrderContext';
 
 function NativeTabLayout() {
   return (
@@ -18,6 +19,10 @@ function NativeTabLayout() {
       <NativeTabs.Trigger name="session">
         <Icon sf={{ default: 'shield', selected: 'shield.fill' }} />
         <Label>Session</Label>
+      </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="trade">
+        <Icon sf={{ default: 'arrow.up.arrow.down.circle', selected: 'arrow.up.arrow.down.circle.fill' }} />
+        <Label>Trade</Label>
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="cards">
         <Icon sf={{ default: 'square.stack', selected: 'square.stack.fill' }} />
@@ -105,6 +110,15 @@ function ClassicTabLayout() {
         }}
       />
       <Tabs.Screen
+        name="trade"
+        options={{
+          title: 'Trade',
+          tabBarIcon: ({ color, size }) => (
+            <TabIcon sfSymbol="arrow.up.arrow.down.circle.fill" featherName="refresh-cw" color={color} size={size} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="cards"
         options={{
           title: 'Cards',
@@ -117,8 +131,8 @@ function ClassicTabLayout() {
         name="journal"
         options={{
           title: 'Journal',
-          tabBarIcon: ({ color, size }) => (
-            <TabIcon sfSymbol="book.fill" featherName="book" color={color} size={size} />
+          tabBarIcon: ({ color: col, size }) => (
+            <TabIcon sfSymbol="book.fill" featherName="book" color={col} size={size} />
           ),
         }}
       />
@@ -126,9 +140,17 @@ function ClassicTabLayout() {
   );
 }
 
-export default function TabLayout() {
+function TabNavigation() {
   if (isLiquidGlassAvailable()) {
     return <NativeTabLayout />;
   }
   return <ClassicTabLayout />;
+}
+
+export default function TabLayout() {
+  return (
+    <OrderProvider>
+      <TabNavigation />
+    </OrderProvider>
+  );
 }
