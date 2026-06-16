@@ -8,6 +8,9 @@ import React from 'react';
 import { Platform, StyleSheet, View } from 'react-native';
 import { Colors } from '@/constants/colors';
 import { OrderProvider } from '@/context/OrderContext';
+import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
+import { SideNav } from '@/components/shared/SideNav';
+import { HardStopOverlay } from '@/components/session/HardStopOverlay';
 
 function NativeTabLayout() {
   return (
@@ -36,7 +39,7 @@ function NativeTabLayout() {
   );
 }
 
-function ClassicTabLayout() {
+function ClassicTabLayout({ hideTabBar = false }: { hideTabBar?: boolean }) {
   const isIOS = Platform.OS === 'ios';
   const isWeb = Platform.OS === 'web';
 
@@ -63,15 +66,17 @@ function ClassicTabLayout() {
         headerShown: false,
         tabBarActiveTintColor: Colors.accentPrimary,
         tabBarInactiveTintColor: Colors.textMuted,
-        tabBarStyle: {
-          position: 'absolute',
-          backgroundColor: isIOS ? 'transparent' : Colors.tabBarBg,
-          borderTopWidth: 1,
-          borderTopColor: Colors.tabBarBorder,
-          elevation: 0,
-          height: isWeb ? 84 : 56,
-          paddingBottom: isWeb ? 34 : 0,
-        },
+        tabBarStyle: hideTabBar
+          ? { display: 'none' }
+          : {
+              position: 'absolute',
+              backgroundColor: isIOS ? 'transparent' : Colors.tabBarBg,
+              borderTopWidth: 1,
+              borderTopColor: Colors.tabBarBorder,
+              elevation: 0,
+              height: isWeb ? 84 : 56,
+              paddingBottom: isWeb ? 34 : 0,
+            },
         tabBarLabelStyle: {
           fontFamily: 'DMSans_500Medium',
           fontSize: 10,
@@ -140,17 +145,45 @@ function ClassicTabLayout() {
   );
 }
 
+/**
+ * Web/Android shell. On wide web we promote the bottom tab bar to a left
+ * sidebar (the tab navigator stays mounted for routing, its bar hidden); on
+ * narrow web/Android it stays a classic bottom tab bar.
+ */
+function ResponsiveShell() {
+  const { isWide } = useResponsiveLayout();
+  return (
+    <View style={styles.shell}>
+      {isWide && <SideNav />}
+      <View style={styles.shellMain}>
+        <ClassicTabLayout hideTabBar={isWide} />
+      </View>
+    </View>
+  );
+}
+
 function TabNavigation() {
   if (isLiquidGlassAvailable()) {
     return <NativeTabLayout />;
   }
-  return <ClassicTabLayout />;
+  return <ResponsiveShell />;
 }
 
 export default function TabLayout() {
   return (
     <OrderProvider>
       <TabNavigation />
+      <HardStopOverlay />
     </OrderProvider>
   );
 }
+
+const styles = StyleSheet.create({
+  shell: {
+    flex: 1,
+    flexDirection: 'row',
+    backgroundColor: Colors.bgPrimary,
+  },
+  // minWidth: 0 lets the flex child shrink instead of overflowing on web.
+  shellMain: { flex: 1, minWidth: 0 },
+});

@@ -1,35 +1,33 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Colors } from '@/constants/colors';
+import { Fonts } from '@/constants/typography';
 import { ProgressBar } from '@/components/shared/ProgressBar';
 import { useSession } from '@/context/SessionContext';
 
+const STATUS_META: Record<string, { color: string; badge: string | null }> = {
+  active: { color: Colors.statusGreen, badge: null },
+  at_goal: { color: Colors.statusBlue, badge: 'AT GOAL — consider stopping' },
+  giving_back: { color: Colors.statusYellow, badge: 'GIVING BACK — protect the day' },
+  max_loss: { color: Colors.statusRed, badge: 'MAX LOSS — session over' },
+  stopped: { color: Colors.textMuted, badge: 'SESSION ENDED' },
+};
+
 export function SessionPnl() {
   const { session } = useSession();
-  const { pnl, peakPnl, trades, dailyGoal, maxLoss } = session;
+  const { pnl, peakPnl, trades, dailyGoal, maxTrades, sessionStatus } = session;
 
   const isPositive = pnl >= 0;
-  const atGoal = pnl >= dailyGoal;
-  const givingBack = peakPnl > 0 && pnl < peakPnl * 0.5;
-  const maxLossHit = pnl <= maxLoss;
-
-  const accentColor = maxLossHit
-    ? Colors.statusRed
-    : givingBack
-    ? Colors.statusYellow
-    : atGoal
-    ? Colors.statusBlue
-    : Colors.statusGreen;
-
+  const { color: accentColor, badge } = STATUS_META[sessionStatus] ?? STATUS_META.active;
   const progress = Math.max(0, Math.min(pnl / dailyGoal, 1));
 
   return (
     <View style={[styles.container, { borderColor: `${accentColor}40`, backgroundColor: `${accentColor}0a` }]}>
       <View style={styles.header}>
         <Text style={styles.label}>SESSION P&L</Text>
-        {atGoal && (
-          <View style={[styles.badge, { backgroundColor: `${Colors.statusBlue}20`, borderColor: `${Colors.statusBlue}50` }]}>
-            <Text style={[styles.badgeText, { color: Colors.statusBlue }]}>AT GOAL — consider stopping</Text>
+        {badge && (
+          <View style={[styles.badge, { backgroundColor: `${accentColor}20`, borderColor: `${accentColor}50` }]}>
+            <Text style={[styles.badgeText, { color: accentColor }]}>{badge}</Text>
           </View>
         )}
       </View>
@@ -39,7 +37,7 @@ export function SessionPnl() {
       <View style={styles.metaRow}>
         <Text style={styles.meta}>Peak: ${peakPnl}</Text>
         <View style={styles.divider} />
-        <Text style={styles.meta}>Trades: {trades.length}/10</Text>
+        <Text style={styles.meta}>Trades: {trades.length}/{maxTrades}</Text>
         <View style={styles.divider} />
         <Text style={styles.meta}>Goal: ${dailyGoal}</Text>
       </View>
@@ -79,7 +77,7 @@ const styles = StyleSheet.create({
   },
   pnl: {
     fontSize: 40,
-    fontFamily: 'DMSans_700Bold',
+    fontFamily: Fonts.monoBold,
     lineHeight: 44,
   },
   metaRow: {

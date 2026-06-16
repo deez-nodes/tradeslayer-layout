@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, Pressable, TextInput } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { Feather } from '@expo/vector-icons';
 import { Colors } from '@/constants/colors';
+import { Fonts } from '@/constants/typography';
 import { useOrder } from '@/context/OrderContext';
 
 const PERCENTS = [25, 50, 75, 100];
@@ -36,6 +37,7 @@ export function QuantityInput() {
           style={[styles.stepBtn, quantity <= 1 && styles.stepBtnDisabled]}
           onPress={decrement}
           disabled={quantity <= 1}
+          accessibilityRole="button"
         >
           <Feather name="minus" size={16} color={quantity <= 1 ? Colors.textMuted : Colors.textPrimary} />
         </Pressable>
@@ -59,6 +61,7 @@ export function QuantityInput() {
           style={[styles.stepBtn, quantity >= maxLots && styles.stepBtnDisabled]}
           onPress={increment}
           disabled={quantity >= maxLots}
+          accessibilityRole="button"
         >
           <Feather name="plus" size={16} color={quantity >= maxLots ? Colors.textMuted : Colors.textPrimary} />
         </Pressable>
@@ -73,6 +76,7 @@ export function QuantityInput() {
               key={pct}
               style={[styles.pctBtn, isActive && styles.pctBtnActive]}
               onPress={() => setPercent(pct)}
+              accessibilityRole="button"
             >
               <Text style={[styles.pctLabel, isActive && styles.pctLabelActive]}>{pct}%</Text>
             </Pressable>
@@ -137,7 +141,7 @@ const styles = StyleSheet.create({
   },
   valueInput: {
     fontSize: 36,
-    fontFamily: 'DMSans_700Bold',
+    fontFamily: Fonts.monoBold,
     color: Colors.textPrimary,
     textAlign: 'center',
     minWidth: 48,

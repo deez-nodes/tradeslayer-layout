@@ -30,24 +30,32 @@ paths for each deployable artifact.
   - Environment: `PORT=8080`
 - **Healthcheck (startup)**: `GET /api/healthz`
 
-### TradeSlayer Pro — Mobile (`@workspace/mobile`)
+### TradeSlayer Pro — Web (`@workspace/mobile`)
 
-- **Kind**: mobile (Expo)
+The app is built with Expo (Expo Router + React Native) and ships to the **web**
+via `react-native-web` (one codebase, `Platform.OS === 'web'` branches + a
+responsive shell). Native iOS/Android remain buildable via `build:native`.
+
+- **Kind**: web (Expo / react-native-web, single-page app)
 - **Title**: TradeSlayer Pro
 - **Version**: 1.0.0
 - **Listening port**: 18115
 - **Mounted paths**: `/`
 - **Base path**: `/`
-- **Integrated skill**: Expo (v1.0.0)
-- **Dev command**: `pnpm --filter @workspace/mobile run dev`
+- **Web dev command**: `pnpm --filter @workspace/mobile run web` (Expo web dev server)
 - **Production build**: `pnpm --filter @workspace/mobile run build`
+  - Runs `expo export --platform web --output-dir dist` (static SPA bundle).
 - **Production run**: `pnpm --filter @workspace/mobile run serve`
-- **Preview reachability check**: `/status`
-- **Environment**: `PORT=18115`, `BASE_PATH=/`
+  - Serves `dist/` via `server/serve.js` with SPA fallback for client routing.
+  - Environment: `PORT=18115`, `BASE_PATH=/`
+- **Healthcheck / preview reachability**: `GET /status` (also `/health`) → `200 {"status":"ok"}`
 
-> Note: this artifact originally used an Expo-domain router for hosted preview.
-> Locally, run the Expo dev server directly (see `artifacts/mobile/package.json`
-> `dev` script).
+> Responsive shell: a centered, phone-faithful column on narrow viewports; a
+> left sidebar + multi-column dashboard at ≥900px wide.
+>
+> Native (Expo Go) path is preserved: `pnpm --filter @workspace/mobile run dev`
+> for the Metro dev server and `run build:native` for the static Expo Go bundle
+> (`scripts/build.js` → `static-build/`).
 
 ### Component Preview Server (`@workspace/mockup-sandbox`)
 

@@ -17,6 +17,8 @@ export function SideSelector() {
       <Pressable
         style={[styles.btn, styles.buyBtn, side === 'buy' && styles.buyActive]}
         onPress={() => select('buy')}
+        accessibilityRole="button"
+        accessibilityState={{ selected: side === 'buy' }}
       >
         <Text style={[styles.label, side === 'buy' && styles.buyLabel]}>BUY</Text>
         {side === 'buy' && <Text style={styles.subLabel}>Long</Text>}
@@ -24,6 +26,8 @@ export function SideSelector() {
       <Pressable
         style={[styles.btn, styles.sellBtn, side === 'sell' && styles.sellActive]}
         onPress={() => select('sell')}
+        accessibilityRole="button"
+        accessibilityState={{ selected: side === 'sell' }}
       >
         <Text style={[styles.label, side === 'sell' && styles.sellLabel]}>SELL</Text>
         {side === 'sell' && <Text style={styles.subLabel}>Short</Text>}

@@ -4,10 +4,16 @@ import {
   DMSans_500Medium,
   DMSans_700Bold,
 } from '@expo-google-fonts/dm-sans';
+import {
+  JetBrainsMono_400Regular,
+  JetBrainsMono_500Medium,
+  JetBrainsMono_700Bold,
+} from '@expo-google-fonts/jetbrains-mono';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import React, { useEffect } from 'react';
+import { Platform } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -38,6 +44,9 @@ export default function RootLayout() {
     DMSans_400Regular,
     DMSans_500Medium,
     DMSans_700Bold,
+    JetBrainsMono_400Regular,
+    JetBrainsMono_500Medium,
+    JetBrainsMono_700Bold,
   });
 
   useEffect(() => {
@@ -48,15 +57,24 @@ export default function RootLayout() {
 
   if (!fontsLoaded && !fontError) return null;
 
+  // KeyboardProvider is a native-only concern (on-screen keyboard avoidance);
+  // skip it on web so it can never interfere with the browser render.
+  const content =
+    Platform.OS === 'web' ? (
+      <RootLayoutNav />
+    ) : (
+      <KeyboardProvider>
+        <RootLayoutNav />
+      </KeyboardProvider>
+    );
+
   return (
     <SafeAreaProvider>
       <ErrorBoundary>
         <QueryClientProvider client={queryClient}>
           <SessionProvider>
             <GestureHandlerRootView style={{ flex: 1 }}>
-              <KeyboardProvider>
-                <RootLayoutNav />
-              </KeyboardProvider>
+              {content}
             </GestureHandlerRootView>
           </SessionProvider>
         </QueryClientProvider>

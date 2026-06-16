@@ -3,6 +3,8 @@ import { View, Text, StyleSheet, Pressable, ActivityIndicator, Modal } from 'rea
 import * as Haptics from 'expo-haptics';
 import { Feather } from '@expo/vector-icons';
 import { Colors } from '@/constants/colors';
+import { Fonts } from '@/constants/typography';
+import { Shadow } from '@/constants/shadows';
 import { useOrder } from '@/context/OrderContext';
 
 const RT_COSTS: Record<string, number> = {
@@ -74,6 +76,8 @@ export function OrderSummary() {
         ]}
         onPress={handleSubmit}
         disabled={isSubmitting}
+        accessibilityRole="button"
+        accessibilityLabel={`Confirm ${sideLabel} ${quantity} ${symbol}`}
       >
         {isSubmitting ? (
           <ActivityIndicator color={Colors.bgPrimary} />
@@ -140,7 +144,7 @@ const rowStyles = StyleSheet.create({
   },
   value: {
     fontSize: 13,
-    fontFamily: 'DMSans_700Bold',
+    fontFamily: Fonts.monoBold,
     color: Colors.textPrimary,
   },
 });
@@ -212,6 +216,7 @@ const styles = StyleSheet.create({
     gap: 12,
     width: '100%',
     maxWidth: 340,
+    ...Shadow.elevated,
   },
   confirmIcon: {
     width: 64,

@@ -1,8 +1,9 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, Platform } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { Colors } from '@/constants/colors';
+import { Fonts } from '@/constants/typography';
+import { Screen } from '@/components/shared/Screen';
 import { TradeLogEntry } from '@/components/journal/TradeLogEntry';
 import { useSession } from '@/context/SessionContext';
 
@@ -17,131 +18,120 @@ const heatColors: Record<string, string> = {
 };
 
 export default function JournalScreen() {
-  const insets = useSafeAreaInsets();
-  const isWeb = Platform.OS === 'web';
   const { session } = useSession();
 
   const winCount = session.trades.filter(t => t.pnl > 0).length;
   const totalTrades = session.trades.length;
-  const winRate = totalTrades > 0 ? ((winCount / totalTrades) * 100).toFixed(0) : '0';
+  // Win rate over *decided* trades only — open/scratch entries (pnl === 0,
+  // e.g. order fills awaiting an exit) don't count for or against it.
+  const decidedTrades = session.trades.filter(t => t.pnl !== 0).length;
+  const winRate = decidedTrades > 0 ? ((winCount / decidedTrades) * 100).toFixed(0) : '0';
   const commissionTotal = session.trades.reduce((acc, t) => acc + t.lots * 4, 0);
-  const overrides = session.trades.filter(t => t.override > 0).length;
+  const overrides = session.trades.filter(t => t.override > 0).length + session.reentryOverrides;
   const tiltPeak = Math.max(...session.trades.map(t => t.tilt), 0);
 
   return (
-    <View style={[styles.root, { backgroundColor: Colors.bgPrimary }]}>
-      <View style={[styles.appBar, { paddingTop: isWeb ? 67 : insets.top + 8 }]}>
-        <Text style={styles.appBarTitle}>JOURNAL</Text>
-        <Pressable style={styles.filterBtn}>
-          <Feather name="filter" size={16} color={Colors.textMuted} />
-          <Text style={styles.filterText}>Filter</Text>
-        </Pressable>
+    <Screen
+      header={
+        <View style={styles.appBar}>
+          <Text style={styles.appBarTitle}>JOURNAL</Text>
+          <Pressable style={styles.filterBtn} accessibilityRole="button" accessibilityLabel="Filter">
+            <Feather name="filter" size={16} color={Colors.textMuted} />
+            <Text style={styles.filterText}>Filter</Text>
+          </Pressable>
+        </View>
+      }
+    >
+      {/* Today header */}
+      <Text style={styles.dayHeader}>
+        Today — {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+      </Text>
+
+      {/* Trade list */}
+      {session.trades.length === 0 ? (
+        <View style={styles.empty}>
+          <Feather name="book" size={32} color={Colors.textMuted} />
+          <Text style={styles.emptyText}>No trades logged today</Text>
+        </View>
+      ) : (
+        session.trades.map(trade => <TradeLogEntry key={trade.id} trade={trade} />)
+      )}
+
+      {/* Session summary */}
+      <View style={styles.dividerRow}>
+        <View style={styles.dividerLine} />
+        <Text style={styles.dividerLabel}>SESSION SUMMARY</Text>
+        <View style={styles.dividerLine} />
       </View>
 
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={[
-          styles.content,
-          { paddingBottom: isWeb ? 34 + 84 : insets.bottom + 80 },
-        ]}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Today header */}
-        <Text style={styles.dayHeader}>
-          Today — {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-        </Text>
-
-        {/* Trade list */}
-        {session.trades.length === 0 ? (
-          <View style={styles.empty}>
-            <Feather name="book" size={32} color={Colors.textMuted} />
-            <Text style={styles.emptyText}>No trades logged today</Text>
+      <View style={styles.summaryCard}>
+        <View style={styles.summaryGrid}>
+          <View style={styles.summaryItem}>
+            <Text style={styles.summaryLabel}>Trades</Text>
+            <Text style={styles.summaryValue}>{totalTrades}</Text>
           </View>
-        ) : (
-          session.trades.map(trade => <TradeLogEntry key={trade.id} trade={trade} />)
-        )}
-
-        {/* Session summary */}
-        <View style={styles.dividerRow}>
-          <View style={styles.dividerLine} />
-          <Text style={styles.dividerLabel}>SESSION SUMMARY</Text>
-          <View style={styles.dividerLine} />
-        </View>
-
-        <View style={styles.summaryCard}>
-          <View style={styles.summaryGrid}>
-            <View style={styles.summaryItem}>
-              <Text style={styles.summaryLabel}>Trades</Text>
-              <Text style={styles.summaryValue}>{totalTrades}</Text>
-            </View>
-            <View style={styles.summaryItem}>
-              <Text style={styles.summaryLabel}>Win Rate</Text>
-              <Text style={[styles.summaryValue, { color: Colors.statusGreen }]}>{winRate}%</Text>
-            </View>
-            <View style={styles.summaryItem}>
-              <Text style={styles.summaryLabel}>Net P&L</Text>
-              <Text style={[styles.summaryValue, { color: session.pnl >= 0 ? Colors.statusGreen : Colors.statusRed }]}>
-                {session.pnl >= 0 ? '+' : ''}${session.pnl}
-              </Text>
-            </View>
+          <View style={styles.summaryItem}>
+            <Text style={styles.summaryLabel}>Win Rate</Text>
+            <Text style={[styles.summaryValue, { color: Colors.statusGreen }]}>{winRate}%</Text>
           </View>
-          <View style={styles.summaryDivider} />
-          <View style={styles.summaryGrid}>
-            <View style={styles.summaryItem}>
-              <Text style={styles.summaryLabel}>Overrides</Text>
-              <Text style={[styles.summaryValue, { color: overrides > 0 ? Colors.statusYellow : Colors.textSecondary }]}>
-                {overrides}
-              </Text>
-            </View>
-            <View style={styles.summaryItem}>
-              <Text style={styles.summaryLabel}>Tilt Peak</Text>
-              <Text style={[styles.summaryValue, { color: tiltPeak > 60 ? Colors.statusRed : tiltPeak > 30 ? Colors.statusYellow : Colors.statusGreen }]}>
-                {tiltPeak}
-              </Text>
-            </View>
-            <View style={styles.summaryItem}>
-              <Text style={styles.summaryLabel}>Commission</Text>
-              <Text style={styles.summaryValue}>${commissionTotal}</Text>
-            </View>
-          </View>
-          <View style={styles.matchRow}>
-            <Feather name="check-circle" size={13} color={Colors.statusGreen} />
-            <Text style={styles.matchText}>Green day profile: MATCH</Text>
+          <View style={styles.summaryItem}>
+            <Text style={styles.summaryLabel}>Net P&L</Text>
+            <Text style={[styles.summaryValue, { color: session.pnl >= 0 ? Colors.statusGreen : Colors.statusRed }]}>
+              {session.pnl >= 0 ? '+' : ''}${session.pnl}
+            </Text>
           </View>
         </View>
-
-        {/* Weekly heat map */}
-        <View style={styles.dividerRow}>
-          <View style={styles.dividerLine} />
-          <Text style={styles.dividerLabel}>WEEKLY HEAT MAP</Text>
-          <View style={styles.dividerLine} />
+        <View style={styles.summaryDivider} />
+        <View style={styles.summaryGrid}>
+          <View style={styles.summaryItem}>
+            <Text style={styles.summaryLabel}>Overrides</Text>
+            <Text style={[styles.summaryValue, { color: overrides > 0 ? Colors.statusYellow : Colors.textSecondary }]}>
+              {overrides}
+            </Text>
+          </View>
+          <View style={styles.summaryItem}>
+            <Text style={styles.summaryLabel}>Tilt Peak</Text>
+            <Text style={[styles.summaryValue, { color: tiltPeak > 60 ? Colors.statusRed : tiltPeak > 30 ? Colors.statusYellow : Colors.statusGreen }]}>
+              {tiltPeak}
+            </Text>
+          </View>
+          <View style={styles.summaryItem}>
+            <Text style={styles.summaryLabel}>Commission</Text>
+            <Text style={styles.summaryValue}>${commissionTotal}</Text>
+          </View>
         </View>
-
-        <View style={styles.heatMap}>
-          {DAYS.map((day, i) => (
-            <View key={i} style={styles.heatDay}>
-              <Text style={styles.heatLabel}>{day}</Text>
-              <View
-                style={[styles.heatSquare, { backgroundColor: `${heatColors[HEAT[i]]}40`, borderColor: heatColors[HEAT[i]] }]}
-              />
-            </View>
-          ))}
+        <View style={styles.matchRow}>
+          <Feather name="check-circle" size={13} color={Colors.statusGreen} />
+          <Text style={styles.matchText}>Green day profile: MATCH</Text>
         </View>
-      </ScrollView>
-    </View>
+      </View>
+
+      {/* Weekly heat map */}
+      <View style={styles.dividerRow}>
+        <View style={styles.dividerLine} />
+        <Text style={styles.dividerLabel}>WEEKLY HEAT MAP</Text>
+        <View style={styles.dividerLine} />
+      </View>
+
+      <View style={styles.heatMap}>
+        {DAYS.map((day, i) => (
+          <View key={i} style={styles.heatDay}>
+            <Text style={styles.heatLabel}>{day}</Text>
+            <View
+              style={[styles.heatSquare, { backgroundColor: `${heatColors[HEAT[i]]}40`, borderColor: heatColors[HEAT[i]] }]}
+            />
+          </View>
+        ))}
+      </View>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1 },
   appBar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.borderDefault,
   },
   appBarTitle: {
     fontSize: 14,
@@ -159,8 +149,6 @@ const styles = StyleSheet.create({
     fontFamily: 'DMSans_500Medium',
     color: Colors.textMuted,
   },
-  scroll: { flex: 1 },
-  content: { padding: 16, gap: 10 },
   dayHeader: {
     fontSize: 13,
     fontFamily: 'DMSans_700Bold',
@@ -203,7 +191,7 @@ const styles = StyleSheet.create({
   },
   summaryValue: {
     fontSize: 18,
-    fontFamily: 'DMSans_700Bold',
+    fontFamily: Fonts.monoBold,
     color: Colors.textPrimary,
   },
   summaryDivider: {

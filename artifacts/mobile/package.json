@@ -5,7 +5,9 @@
   "main": "expo-router/entry",
   "scripts": {
     "dev": "pnpm exec expo start --port $PORT",
-    "build": "node scripts/build.js",
+    "web": "pnpm exec expo start --web --port $PORT",
+    "build": "pnpm exec expo export --platform web --output-dir dist",
+    "build:native": "node scripts/build.js",
     "serve": "node server/serve.js",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
@@ -56,6 +58,7 @@
     "zod-validation-error": "^3.4.0"
   },
   "dependencies": {
-    "@expo-google-fonts/dm-sans": "^0.4.2"
+    "@expo-google-fonts/dm-sans": "^0.4.2",
+    "@expo-google-fonts/jetbrains-mono": "^0.4.1"
   }
 }

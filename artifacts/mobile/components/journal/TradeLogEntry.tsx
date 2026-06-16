@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Colors } from '@/constants/colors';
+import { Fonts } from '@/constants/typography';
 import { Trade } from '@/context/SessionContext';
 
 type Props = {
@@ -59,7 +60,7 @@ const styles = StyleSheet.create({
   },
   number: {
     fontSize: 12,
-    fontFamily: 'DMSans_500Medium',
+    fontFamily: Fonts.monoMedium,
     color: Colors.textMuted,
     minWidth: 24,
   },
@@ -78,7 +79,7 @@ const styles = StyleSheet.create({
   },
   pnl: {
     fontSize: 16,
-    fontFamily: 'DMSans_700Bold',
+    fontFamily: Fonts.monoBold,
   },
   metaRow: {
     flexDirection: 'row',
@@ -87,7 +88,7 @@ const styles = StyleSheet.create({
   },
   meta: {
     fontSize: 11,
-    fontFamily: 'DMSans_400Regular',
+    fontFamily: Fonts.mono,
     color: Colors.textMuted,
   },
   metaDot: {
@@ -102,12 +103,12 @@ const styles = StyleSheet.create({
   },
   tiltText: {
     fontSize: 11,
-    fontFamily: 'DMSans_400Regular',
+    fontFamily: Fonts.mono,
     color: Colors.textMuted,
   },
   overrideText: {
     fontSize: 11,
-    fontFamily: 'DMSans_400Regular',
+    fontFamily: Fonts.mono,
     color: Colors.textMuted,
   },
   exitBadge: {

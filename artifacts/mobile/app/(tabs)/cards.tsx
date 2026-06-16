@@ -6,11 +6,10 @@ import {
   ScrollView,
   TextInput,
   Pressable,
-  Platform,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import { Colors } from '@/constants/colors';
+import { Screen } from '@/components/shared/Screen';
 import { strategyCards } from '@/data/strategyCards';
 import { StrategyCardItem } from '@/components/cards/StrategyCardItem';
 import { StrategyCardDetail } from '@/components/cards/StrategyCardDetail';
@@ -18,8 +17,6 @@ import { StrategyCardDetail } from '@/components/cards/StrategyCardDetail';
 const CATEGORIES = ['All', 'Trend', 'Momentum', 'Mean Rev', 'Breakout'] as const;
 
 export default function CardsScreen() {
-  const insets = useSafeAreaInsets();
-  const isWeb = Platform.OS === 'web';
   const [search, setSearch] = useState('');
   const [activeCategory, setActiveCategory] = useState<string>('All');
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
@@ -38,64 +35,61 @@ export default function CardsScreen() {
   const selectedCard = strategyCards.find(c => c.id === selectedCardId) ?? null;
 
   return (
-    <View style={[styles.root, { backgroundColor: Colors.bgPrimary }]}>
-      {/* App bar */}
-      <View style={[styles.appBar, { paddingTop: isWeb ? 67 : insets.top + 8 }]}>
-        <View>
-          <Text style={styles.appBarTitle}>Strategy Cards</Text>
-          <Text style={styles.appBarSub}>{strategyCards.length} trading playbooks</Text>
-        </View>
-        <View style={styles.appBarActions}>
-          <Feather name="edit-2" size={18} color={Colors.textMuted} />
-          <Feather name="trending-up" size={18} color={Colors.textMuted} />
-        </View>
-      </View>
+    <>
+      <Screen
+        header={
+          <View style={styles.appBar}>
+            <View>
+              <Text style={styles.appBarTitle}>Strategy Cards</Text>
+              <Text style={styles.appBarSub}>{strategyCards.length} trading playbooks</Text>
+            </View>
+            <View style={styles.appBarActions}>
+              <Feather name="edit-2" size={18} color={Colors.textMuted} />
+              <Feather name="trending-up" size={18} color={Colors.textMuted} />
+            </View>
+          </View>
+        }
+        subHeader={
+          <>
+            <View style={styles.searchRow}>
+              <Feather name="search" size={15} color={Colors.textMuted} />
+              <TextInput
+                style={styles.searchInput}
+                placeholder="Search strategies..."
+                placeholderTextColor={Colors.textMuted}
+                value={search}
+                onChangeText={setSearch}
+              />
+              {search.length > 0 && (
+                <Pressable onPress={() => setSearch('')} accessibilityRole="button" accessibilityLabel="Clear search">
+                  <Feather name="x" size={15} color={Colors.textMuted} />
+                </Pressable>
+              )}
+            </View>
 
-      {/* Search */}
-      <View style={styles.searchRow}>
-        <Feather name="search" size={15} color={Colors.textMuted} style={styles.searchIcon} />
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Search strategies..."
-          placeholderTextColor={Colors.textMuted}
-          value={search}
-          onChangeText={setSearch}
-        />
-        {search.length > 0 && (
-          <Pressable onPress={() => setSearch('')}>
-            <Feather name="x" size={15} color={Colors.textMuted} />
-          </Pressable>
-        )}
-      </View>
-
-      {/* Category filter */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={styles.categoryScroll}
-        contentContainerStyle={styles.categoryContent}
-      >
-        {CATEGORIES.map(cat => (
-          <Pressable
-            key={cat}
-            style={[styles.catChip, activeCategory === cat && styles.catChipActive]}
-            onPress={() => setActiveCategory(cat)}
-          >
-            <Text style={[styles.catText, activeCategory === cat && styles.catTextActive]}>
-              {cat}
-            </Text>
-          </Pressable>
-        ))}
-      </ScrollView>
-
-      {/* Card list */}
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={[
-          styles.content,
-          { paddingBottom: isWeb ? 34 + 84 : insets.bottom + 80 },
-        ]}
-        showsVerticalScrollIndicator={false}
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.categoryScroll}
+              contentContainerStyle={styles.categoryContent}
+            >
+              {CATEGORIES.map(cat => (
+                <Pressable
+                  key={cat}
+                  style={[styles.catChip, activeCategory === cat && styles.catChipActive]}
+                  onPress={() => setActiveCategory(cat)}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: activeCategory === cat }}
+                >
+                  <Text style={[styles.catText, activeCategory === cat && styles.catTextActive]}>
+                    {cat}
+                  </Text>
+                </Pressable>
+              ))}
+            </ScrollView>
+          </>
+        }
+        contentStyle={styles.list}
       >
         {filtered.length === 0 ? (
           <View style={styles.empty}>
@@ -111,7 +105,7 @@ export default function CardsScreen() {
             />
           ))
         )}
-      </ScrollView>
+      </Screen>
 
       {selectedCard && (
         <StrategyCardDetail
@@ -120,20 +114,15 @@ export default function CardsScreen() {
           onClose={() => setSelectedCardId(null)}
         />
       )}
-    </View>
+    </>
   );
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1 },
   appBar: {
     flexDirection: 'row',
     alignItems: 'flex-end',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.borderDefault,
   },
   appBarTitle: {
     fontSize: 20,
@@ -163,7 +152,6 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     gap: 8,
   },
-  searchIcon: {},
   searchInput: {
     flex: 1,
     fontSize: 14,
@@ -194,8 +182,7 @@ const styles = StyleSheet.create({
     color: Colors.textMuted,
   },
   catTextActive: { color: Colors.accentPrimary },
-  scroll: { flex: 1 },
-  content: { padding: 12, gap: 10 },
+  list: { padding: 12, gap: 10 },
   empty: {
     alignItems: 'center',
     paddingTop: 60,

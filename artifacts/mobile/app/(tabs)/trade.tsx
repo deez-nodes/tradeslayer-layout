@@ -5,12 +5,13 @@ import {
   StyleSheet,
   ScrollView,
   Pressable,
-  Platform,
   FlatList,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import { Colors } from '@/constants/colors';
+import { Fonts } from '@/constants/typography';
+import { ContentWidth } from '@/constants/layout';
+import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { SideSelector } from '@/components/trade/SideSelector';
 import { OrderTypeSelector } from '@/components/trade/OrderTypeSelector';
 import { QuantityInput } from '@/components/trade/QuantityInput';
@@ -20,88 +21,87 @@ import { OrderSummary } from '@/components/trade/OrderSummary';
 import { useOrder } from '@/context/OrderContext';
 
 const SYMBOLS = ['MES', 'ES', 'NQ', 'MNQ', 'RTY', 'YM'];
+const MAX_WIDTH = ContentWidth.column;
 
 type TabMode = 'order' | 'positions';
 
 export default function TradeScreen() {
-  const insets = useSafeAreaInsets();
-  const isWeb = Platform.OS === 'web';
+  const { isWide, headerPaddingTop, contentPaddingBottom } = useResponsiveLayout();
   const { symbol, setSymbol, orders, cancelOrder, currentPrice } = useOrder();
   const [mode, setMode] = useState<TabMode>('order');
 
   const openOrders = orders.filter(o => o.status === 'pending' || o.status === 'filled');
+  const centeredCol = isWide ? { maxWidth: MAX_WIDTH, alignSelf: 'center' as const } : undefined;
 
   return (
-    <View style={[styles.root, { backgroundColor: Colors.bgPrimary }]}>
+    <View style={styles.root}>
       {/* App bar */}
-      <View style={[styles.appBar, { paddingTop: isWeb ? 67 : insets.top + 8 }]}>
-        <View>
-          <Text style={styles.appBarTitle}>ORDER TICKET</Text>
-          <Text style={styles.currentPrice}>{currentPrice.toLocaleString('en-US', { minimumFractionDigits: 2 })}</Text>
-        </View>
-        <View style={styles.modeSwitcher}>
-          <Pressable
-            style={[styles.modeBtn, mode === 'order' && styles.modeBtnActive]}
-            onPress={() => setMode('order')}
-          >
-            <Text style={[styles.modeBtnText, mode === 'order' && styles.modeBtnTextActive]}>Order</Text>
-          </Pressable>
-          <Pressable
-            style={[styles.modeBtn, mode === 'positions' && styles.modeBtnActive]}
-            onPress={() => setMode('positions')}
-          >
-            <Text style={[styles.modeBtnText, mode === 'positions' && styles.modeBtnTextActive]}>
-              Positions {openOrders.length > 0 ? `(${openOrders.length})` : ''}
-            </Text>
-          </Pressable>
+      <View style={[styles.appBarOuter, { paddingTop: headerPaddingTop }]}>
+        <View style={[styles.appBar, { width: '100%' }, centeredCol]}>
+          <View>
+            <Text style={styles.appBarTitle}>ORDER TICKET</Text>
+            <Text style={styles.currentPrice}>{currentPrice.toLocaleString('en-US', { minimumFractionDigits: 2 })}</Text>
+          </View>
+          <View style={styles.modeSwitcher}>
+            <Pressable
+              style={[styles.modeBtn, mode === 'order' && styles.modeBtnActive]}
+              onPress={() => setMode('order')}
+              accessibilityRole="button"
+              accessibilityState={{ selected: mode === 'order' }}
+            >
+              <Text style={[styles.modeBtnText, mode === 'order' && styles.modeBtnTextActive]}>Order</Text>
+            </Pressable>
+            <Pressable
+              style={[styles.modeBtn, mode === 'positions' && styles.modeBtnActive]}
+              onPress={() => setMode('positions')}
+              accessibilityRole="button"
+              accessibilityState={{ selected: mode === 'positions' }}
+            >
+              <Text style={[styles.modeBtnText, mode === 'positions' && styles.modeBtnTextActive]}>
+                Positions {openOrders.length > 0 ? `(${openOrders.length})` : ''}
+              </Text>
+            </Pressable>
+          </View>
         </View>
       </View>
 
       {mode === 'order' ? (
         <ScrollView
           style={styles.scroll}
-          contentContainerStyle={[
-            styles.content,
-            { paddingBottom: isWeb ? 34 + 84 : insets.bottom + 90 },
-          ]}
+          contentContainerStyle={[styles.scrollContent, { paddingBottom: contentPaddingBottom }]}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          {/* Symbol selector */}
-          <View style={styles.symbolRow}>
-            {SYMBOLS.map(sym => (
-              <Pressable
-                key={sym}
-                style={[styles.symbolChip, symbol === sym && styles.symbolChipActive]}
-                onPress={() => setSymbol(sym)}
-              >
-                <Text style={[styles.symbolText, symbol === sym && styles.symbolTextActive]}>
-                  {sym}
-                </Text>
-              </Pressable>
-            ))}
+          <View style={[styles.content, { width: '100%' }, centeredCol]}>
+            {/* Symbol selector */}
+            <View style={styles.symbolRow}>
+              {SYMBOLS.map(sym => (
+                <Pressable
+                  key={sym}
+                  style={[styles.symbolChip, symbol === sym && styles.symbolChipActive]}
+                  onPress={() => setSymbol(sym)}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: symbol === sym }}
+                >
+                  <Text style={[styles.symbolText, symbol === sym && styles.symbolTextActive]}>
+                    {sym}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+
+            <SideSelector />
+
+            <View style={styles.sectionGroup}>
+              <Text style={styles.sectionLabel}>ORDER TYPE</Text>
+              <OrderTypeSelector />
+            </View>
+
+            <PriceInputRow />
+            <QuantityInput />
+            <StopLossChart />
+            <OrderSummary />
           </View>
-
-          {/* Buy / Sell */}
-          <SideSelector />
-
-          {/* Order type */}
-          <View style={styles.sectionGroup}>
-            <Text style={styles.sectionLabel}>ORDER TYPE</Text>
-            <OrderTypeSelector />
-          </View>
-
-          {/* Price inputs */}
-          <PriceInputRow />
-
-          {/* Quantity + percent quick values */}
-          <QuantityInput />
-
-          {/* Chart with draggable SL / TP */}
-          <StopLossChart />
-
-          {/* Order summary + submit */}
-          <OrderSummary />
         </ScrollView>
       ) : (
         <View style={styles.positionsContainer}>
@@ -117,7 +117,8 @@ export default function TradeScreen() {
               keyExtractor={o => o.id}
               contentContainerStyle={[
                 styles.positionsList,
-                { paddingBottom: isWeb ? 34 + 84 : insets.bottom + 80 },
+                { width: '100%', paddingBottom: contentPaddingBottom },
+                centeredCol,
               ]}
               renderItem={({ item: order }) => {
                 const isBuy = order.side === 'buy';
@@ -175,6 +176,8 @@ export default function TradeScreen() {
                         <Pressable
                           style={styles.cancelBtn}
                           onPress={() => cancelOrder(order.id)}
+                          accessibilityRole="button"
+                          accessibilityLabel="Cancel order"
                         >
                           <Feather name="x" size={12} color={Colors.statusRed} />
                           <Text style={styles.cancelText}>Cancel</Text>
@@ -193,15 +196,17 @@ export default function TradeScreen() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1 },
+  root: { flex: 1, backgroundColor: Colors.bgPrimary },
+  appBarOuter: {
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.borderDefault,
+  },
   appBar: {
     flexDirection: 'row',
     alignItems: 'flex-end',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.borderDefault,
   },
   appBarTitle: {
     fontSize: 10,
@@ -211,7 +216,7 @@ const styles = StyleSheet.create({
   },
   currentPrice: {
     fontSize: 22,
-    fontFamily: 'DMSans_700Bold',
+    fontFamily: Fonts.monoBold,
     color: Colors.textPrimary,
     marginTop: 2,
   },
@@ -239,6 +244,7 @@ const styles = StyleSheet.create({
     color: Colors.textPrimary,
   },
   scroll: { flex: 1 },
+  scrollContent: { alignItems: 'center' },
   content: { padding: 12, gap: 10 },
   symbolRow: {
     flexDirection: 'row',

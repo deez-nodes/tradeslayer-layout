@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable, Modal } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { Colors } from '@/constants/colors';
+import { Fonts } from '@/constants/typography';
+import { Shadow } from '@/constants/shadows';
 import { StrategyCard } from '@/data/strategyCards';
 import { useSession } from '@/context/SessionContext';
 
@@ -36,7 +38,7 @@ export function StrategyCardDetail({ card, visible, onClose }: Props) {
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
       <View style={styles.modal}>
         <View style={styles.header}>
-          <Pressable style={styles.backBtn} onPress={onClose}>
+          <Pressable style={styles.backBtn} onPress={onClose} accessibilityRole="button" accessibilityLabel="Back">
             <Feather name="arrow-left" size={20} color={Colors.textPrimary} />
           </Pressable>
           <Text style={styles.headerTitle} numberOfLines={1}>{card.name}</Text>
@@ -155,7 +157,7 @@ export function StrategyCardDetail({ card, visible, onClose }: Props) {
             </View>
           </View>
 
-          <Pressable style={styles.ctaButton}>
+          <Pressable style={styles.ctaButton} accessibilityRole="button">
             <Text style={styles.ctaText}>LOG TRADE WITH THIS CARD</Text>
           </Pressable>
         </ScrollView>
@@ -168,6 +170,7 @@ const styles = StyleSheet.create({
   modal: {
     flex: 1,
     backgroundColor: Colors.bgPrimary,
+    ...Shadow.elevated,
   },
   header: {
     flexDirection: 'row',
@@ -239,7 +242,7 @@ const styles = StyleSheet.create({
   },
   sectionScore: {
     fontSize: 12,
-    fontFamily: 'DMSans_700Bold',
+    fontFamily: Fonts.monoBold,
   },
   checkRow: {
     flexDirection: 'row',
@@ -264,7 +267,7 @@ const styles = StyleSheet.create({
   spacer: { flex: 1 },
   weight: {
     fontSize: 11,
-    fontFamily: 'DMSans_700Bold',
+    fontFamily: Fonts.monoBold,
   },
   crossSection: {
     backgroundColor: Colors.bgCard,
@@ -289,7 +292,7 @@ const styles = StyleSheet.create({
   },
   crossValue: {
     fontSize: 18,
-    fontFamily: 'DMSans_700Bold',
+    fontFamily: Fonts.monoBold,
     color: Colors.textPrimary,
   },
   ctaButton: {

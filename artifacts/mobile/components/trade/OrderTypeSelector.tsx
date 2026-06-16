@@ -19,6 +19,8 @@ export function OrderTypeSelector() {
           key={t.key}
           style={[styles.chip, orderType === t.key && styles.chipActive]}
           onPress={() => setOrderType(t.key)}
+          accessibilityRole="button"
+          accessibilityState={{ selected: orderType === t.key }}
         >
           <Text style={[styles.label, orderType === t.key && styles.labelActive]}>{t.label}</Text>
         </Pressable>
