@@ -1,0 +1,76 @@
+@import 'tailwindcss';
+
+/* Self-hosted fonts (no external network at runtime) */
+@import '@fontsource/dm-sans/400.css';
+@import '@fontsource/dm-sans/500.css';
+@import '@fontsource/dm-sans/700.css';
+@import '@fontsource/jetbrains-mono/400.css';
+@import '@fontsource/jetbrains-mono/500.css';
+@import '@fontsource/jetbrains-mono/700.css';
+
+/*
+ * Design tokens — the TradeSlayer palette (was constants/colors.ts) mapped to
+ * Tailwind v4 theme tokens. Semantic names: canvas/panel/line/fg + up/down/
+ * warn/info/accent. Numbers use the mono font; body uses DM Sans.
+ */
+@theme {
+  --color-canvas: #0a0e1a;
+  --color-panel: #111827;
+  --color-panel-hi: #1a2236;
+  --color-elevated: #1e293b;
+
+  --color-line: #1e293b;
+  --color-line-dim: #162032;
+
+  --color-accent: #00e5a0;
+  --color-up: #00e5a0;
+  --color-warn: #f5a623;
+  --color-down: #ef4444;
+  --color-info: #3b82f6;
+
+  --color-cat-trend: #3b82f6;
+  --color-cat-momentum: #8b5cf6;
+  --color-cat-meanrev: #f5a623;
+  --color-cat-breakout: #00e5a0;
+
+  --color-fg: #f1f5f9;
+  --color-fg-dim: #94a3b8;
+  --color-fg-mute: #64748b;
+
+  --font-sans: 'DM Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', monospace;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--color-canvas);
+  color: var(--color-fg);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Tabular, non-reflowing numerics everywhere we opt into the mono font. */
+.font-mono {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Thin dark scrollbars to match the terminal aesthetic. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-elevated) transparent;
+}
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+*::-webkit-scrollbar-thumb {
+  background: var(--color-elevated);
+  border-radius: 999px;
+}

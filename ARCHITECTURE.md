@@ -2,72 +2,86 @@
 
 ## Overview
 
-**TradeSlayer Pro** is a mobile-first day-trading *discipline & journaling* app built with Expo Router / React Native. It runs on iOS/Android (Expo) and on the web via `react-native-web`. State is **local-first** — there is no backend; session, orders, and journal data are persisted on-device with AsyncStorage.
+**TradeSlayer Pro** is a desktop-first **web** app — a day-trading *discipline &
+journaling* terminal. It's a pure React + Vite single-page app (no React Native /
+Expo). State is **local-first**: session, orders, and journal data persist in the
+browser via `localStorage`. There is no backend.
 
-The repository is a pnpm workspace with a single package, `artifacts/mobile`. (The workspace layout is retained so additional packages — e.g. a future broker proxy — can be added later.)
+The repository is a pnpm workspace with a single package, `artifacts/web`.
 
 ## Stack
 
-- **App framework**: Expo SDK 54, expo-router 6
-- **UI runtime**: React 19, React Native 0.81, `react-native-web` (web target)
+- **Framework**: React 19 + Vite 7 (SPA)
 - **Language**: TypeScript 5.9 (strict)
-- **Persistence**: `@react-native-async-storage/async-storage` (local-first)
-- **Graphics/animation**: `react-native-svg`, `react-native-reanimated`, `react-native-gesture-handler`
-- **Bundler**: Metro (native + web export)
-- **Node.js version**: 24
-- **Package manager**: pnpm
+- **Styling**: Tailwind CSS v4 (`@tailwindcss/vite`), theme tokens in `src/index.css`
+- **Routing**: `react-router-dom` 7 (sidebar nav + overlay routes)
+- **Charts**: `lightweight-charts` 5 (TradingView) — candlestick price charts
+- **Icons**: `lucide-react`
+- **Fonts**: self-hosted `@fontsource` (DM Sans + JetBrains Mono)
+- **Persistence**: `localStorage`
+- **Node.js**: 24 · **Package manager**: pnpm
 
 ## Structure
 
 ```text
 tradeslayer-layout/
-├── artifacts/
-│   └── mobile/                 # The app (@workspace/mobile)
-│       ├── app/                # expo-router routes — (tabs)/ = Dashboard, Trade, Session, Journal, Cards
-│       ├── components/         # Feature UI: dashboard/, trade/, session/, journal/, cards/, shared/
-│       ├── context/            # SessionContext, OrderContext (app state + AsyncStorage hydration)
-│       ├── constants/          # colors, instruments, layout, nav, typography, shadows
-│       ├── data/               # strategyCards.ts (seed strategy cards)
-│       ├── hooks/              # useResponsiveLayout, useHover
-│       ├── lib/                # storage.ts (AsyncStorage helpers), tilt.ts (tilt computation)
-│       ├── server/             # serve.js — serves the exported web build (dist/) with SPA fallback + /status
-│       ├── scripts/            # build.js — native Expo Go build helper
-│       ├── app.json            # Expo config (web output: single-page)
-│       ├── metro.config.js     # Metro bundler config
-│       └── tsconfig.json       # extends expo/tsconfig.base
-├── attached_assets/            # Design spec (tradeslayer-layout-structure_*.md)
-├── DEPLOY.md                   # Deployment instructions
-├── pnpm-workspace.yaml         # workspace (artifacts/mobile) + catalog + platform overrides
-├── tsconfig.base.json          # shared TS base
-├── tsconfig.json               # root TS project references (empty — app self-typechecks)
-└── package.json                # root scripts (typecheck, build)
+└── artifacts/
+    └── web/                       # The app (@workspace/web)
+        ├── src/
+        │   ├── main.tsx           # BrowserRouter + mount
+        │   ├── App.tsx            # routes + providers (Session/Order) + ErrorBoundary
+        │   ├── index.css          # Tailwind @theme tokens (palette + fonts)
+        │   ├── components/
+        │   │   ├── Shell.tsx       # sidebar nav + top bar (live P&L HUD)
+        │   │   ├── ui.tsx          # Panel, PillBadge, StatusDot, ProgressBar, Stat, IconButton
+        │   │   ├── ErrorBoundary.tsx
+        │   │   ├── chart/          # PriceChart, TradeChart, chartTheme (lightweight-charts)
+        │   │   └── session/HardStopOverlay.tsx
+        │   ├── screens/           # Dashboard, Trade, Session, Journal, Cards, Settings, Notifications
+        │   ├── context/          # SessionContext, OrderContext
+        │   ├── lib/              # tilt (scoring), storage (localStorage), cn
+        │   ├── constants/        # colors, instruments, nav
+        │   └── data/             # strategyCards
+        ├── server/serve.js        # static SPA server for the built dist/
+        ├── index.html · vite.config.ts · tsconfig.json · package.json
+└── pnpm-workspace.yaml · DEPLOY.md · ARCHITECTURE.md
 ```
 
-## Root scripts
+## Scripts (`artifacts/web`)
 
-- `pnpm run typecheck` — typechecks every `artifacts/**` package (currently just the mobile app).
-- `pnpm run build` — typechecks, then runs each package's `build` (mobile: `expo export --platform web`).
+Run with `pnpm --filter @workspace/web run <script>`:
 
-## App scripts (`artifacts/mobile`)
+- `dev` — Vite dev server (HMR)
+- `build` — `vite build` → static SPA in `dist/`
+- `preview` — Vite's preview server for the build
+- `serve` — `node server/serve.js` (zero-dep static server with SPA fallback; `/status` health)
+- `typecheck` — `tsc --noEmit`
 
-Run with `pnpm --filter @workspace/mobile run <script>`:
-
-- `dev` — `expo start` (Metro dev server; open in Expo Go or a simulator)
-- `web` — `expo start --web` (web dev server)
-- `build` — `expo export --platform web --output-dir dist` (static web build)
-- `serve` — `node server/serve.js` (serve the exported `dist/` with SPA fallback; `/status` health route)
-- `build:native` — `node scripts/build.js` (native Expo Go build)
-- `typecheck` — `tsc -p tsconfig.json --noEmit`
+Root: `pnpm run typecheck` / `pnpm run build` run across `artifacts/**` (just the web app).
 
 ## State & persistence
 
-Two React contexts hold all app state and persist to AsyncStorage via `lib/storage.ts`:
+Two React contexts hold all app state, persisted to `localStorage` via `lib/storage.ts`:
 
-- **`SessionContext`** — the trading session: P&L, peak P&L, trades (the journal), tilt score (computed in `lib/tilt.ts` from consecutive losses / giving-back / fast-reentry), reentry countdown, guardrail config (daily goal, max loss, max trades, max lots), and regime context. Hydrates on launch, then persists on change.
-- **`OrderContext`** — the order ticket and placed orders. On a fill it bridges an executed entry into the session journal (`addTrade`). With no broker configured (`EXPO_PUBLIC_DOMAIN` unset) it fills locally and flags the order `simulated`; if a broker proxy URL is set, it POSTs to `${EXPO_PUBLIC_DOMAIN}/api/orders` and surfaces the real outcome (no fabricated fills).
+- **`SessionContext`** — the trading session: P&L, peak P&L, trades (the journal),
+  tilt score (computed in `lib/tilt.ts` from consecutive losses / giving-back /
+  fast-reentry), reentry countdown, guardrail config (daily goal, max loss, max
+  trades, max lots), and regime context. Hydrates on load, then persists on change.
+- **`OrderContext`** — the order ticket and placed orders. On a fill it bridges an
+  executed entry into the journal (`addTrade`). With no broker configured
+  (`VITE_BACKEND` unset) it fills locally and flags the order `simulated`; if a
+  broker proxy URL is set it POSTs to `${VITE_BACKEND}/api/orders` and surfaces the
+  real outcome (no fabricated fills).
 
-Dashboard market data (signals, alerts, context tiles, chart candles) is **simulated demo data**, clearly labeled in the UI.
+## Charts
+
+`lightweight-charts` v5 (`chart.addSeries(CandlestickSeries, …)`, `autoSize`,
+`chart.remove()` cleanup). `PriceChart` is the dashboard hero; `TradeChart` is bound
+to `OrderContext` and draws SL / TP / entry as price lines. Candle data is
+deterministic **demo** OHLC seeded per symbol, labeled `SIMULATED`. Dashboard market
+widgets (signals, alerts, context tiles) are likewise simulated and labeled.
 
 ## Deployment
 
-See [DEPLOY.md](DEPLOY.md). The web build is `expo export --platform web` served by `server/serve.js`; native builds go through Expo.
+See [DEPLOY.md](DEPLOY.md). Build with `vite build`; serve the static `dist/` with
+`server/serve.js` (or any static host with SPA fallback).
