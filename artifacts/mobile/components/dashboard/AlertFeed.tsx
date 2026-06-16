@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { Colors } from '@/constants/colors';
+import { PillBadge } from '@/components/shared/PillBadge';
 
 type Alert = {
   id: string;
@@ -25,7 +26,10 @@ const alertConfig = {
 export function AlertFeed() {
   return (
     <View style={styles.container}>
-      <Text style={styles.sectionLabel}>ALERTS</Text>
+      <View style={styles.labelRow}>
+        <Text style={styles.sectionLabel}>ALERTS</Text>
+        <PillBadge label="SIMULATED" />
+      </View>
       <View style={styles.list}>
         {alerts.map(alert => {
           const config = alertConfig[alert.type];
@@ -44,6 +48,11 @@ export function AlertFeed() {
 const styles = StyleSheet.create({
   container: {
     gap: 8,
+  },
+  labelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   sectionLabel: {
     fontSize: 10,

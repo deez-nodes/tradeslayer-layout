@@ -11,6 +11,7 @@ import Svg, { Rect, Line, Path, Circle, Text as SvgText, G } from 'react-native-
 import * as Haptics from 'expo-haptics';
 import { Colors } from '@/constants/colors';
 import { Fonts } from '@/constants/typography';
+import { PillBadge } from '@/components/shared/PillBadge';
 import { useOrder } from '@/context/OrderContext';
 
 const CHART_HEIGHT = 220;
@@ -146,7 +147,10 @@ export function StopLossChart() {
   return (
     <View style={styles.wrapper}>
       <View style={styles.header}>
-        <Text style={styles.title}>PRICE CHART · DRAG LEVELS</Text>
+        <View style={styles.titleRow}>
+          <Text style={styles.title}>PRICE CHART · DRAG LEVELS</Text>
+          <PillBadge label="SIMULATED" />
+        </View>
         <View style={styles.rrBadge}>
           <Text style={styles.rrLabel}>R:R</Text>
           <Text style={styles.rrValue}>{rr}</Text>
@@ -405,6 +409,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+  },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   title: {
     fontSize: 10,

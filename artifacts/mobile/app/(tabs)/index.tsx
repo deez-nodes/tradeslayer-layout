@@ -6,6 +6,7 @@ import { Colors } from '@/constants/colors';
 import { ContentWidth, Space } from '@/constants/layout';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { Screen } from '@/components/shared/Screen';
+import { PillBadge } from '@/components/shared/PillBadge';
 import { RegimeBadge } from '@/components/dashboard/RegimeBadge';
 import { ContextTile } from '@/components/dashboard/ContextTile';
 import { SignalStrip } from '@/components/dashboard/SignalStrip';
@@ -18,8 +19,9 @@ export default function DashboardScreen() {
 
   const contextGrid = (
     <>
-      <View style={styles.sectionLabel}>
+      <View style={[styles.sectionLabel, styles.sectionLabelRow]}>
         <Text style={styles.sectionLabelText}>CONTEXT · LAYER 1</Text>
+        <PillBadge label="SIMULATED" />
       </View>
       <View style={styles.contextGrid}>
         <View style={styles.contextRow}>
@@ -115,6 +117,11 @@ const styles = StyleSheet.create({
   },
   col: { flex: 1, minWidth: 0, gap: Space.md },
   sectionLabel: { marginTop: Space.xs },
+  sectionLabelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
   sectionLabelText: {
     fontSize: 10,
     fontFamily: 'DMSans_500Medium',

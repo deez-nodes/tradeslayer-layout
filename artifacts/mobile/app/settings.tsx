@@ -66,7 +66,7 @@ export default function SettingsScreen() {
         <Text style={styles.title}>SETTINGS</Text>
         <Pressable
           style={styles.closeBtn}
-          onPress={() => router.back()}
+          onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))}
           accessibilityRole="button"
           accessibilityLabel="Close settings"
         >

@@ -120,7 +120,7 @@ export default function NotificationsScreen() {
         <Text style={styles.title}>NOTIFICATIONS</Text>
         <Pressable
           style={styles.closeBtn}
-          onPress={() => router.back()}
+          onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))}
           accessibilityRole="button"
           accessibilityLabel="Close notifications"
         >

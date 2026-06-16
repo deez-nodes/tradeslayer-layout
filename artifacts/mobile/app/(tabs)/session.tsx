@@ -8,6 +8,7 @@ import { TiltMeterFull } from '@/components/session/TiltMeterFull';
 import { ReentryCountdown } from '@/components/session/ReentryCountdown';
 import { CommissionCalc } from '@/components/session/CommissionCalc';
 import { GuardrailStatus } from '@/components/session/GuardrailStatus';
+import { SessionSummary } from '@/components/session/SessionSummary';
 import { useSession } from '@/context/SessionContext';
 
 export default function SessionScreen() {
@@ -35,6 +36,7 @@ export default function SessionScreen() {
       <ReentryCountdown />
       <CommissionCalc />
       <GuardrailStatus />
+      <SessionSummary />
     </Screen>
   );
 }

@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, ScrollView, StyleSheet } from 'react-native';
 import { Colors } from '@/constants/colors';
 import { Fonts } from '@/constants/typography';
+import { PillBadge } from '@/components/shared/PillBadge';
 
 type Signal = {
   label: string;
@@ -21,7 +22,10 @@ const signals: Signal[] = [
 export function SignalStrip() {
   return (
     <View style={styles.wrapper}>
-      <Text style={styles.sectionLabel}>SIGNALS · LAYER 2</Text>
+      <View style={styles.labelRow}>
+        <Text style={styles.sectionLabel}>SIGNALS · LAYER 2</Text>
+        <PillBadge label="SIMULATED" />
+      </View>
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -49,6 +53,11 @@ export function SignalStrip() {
 const styles = StyleSheet.create({
   wrapper: {
     gap: 6,
+  },
+  labelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   sectionLabel: {
     fontSize: 10,

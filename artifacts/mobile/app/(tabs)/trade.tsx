@@ -17,6 +17,7 @@ import { OrderTypeSelector } from '@/components/trade/OrderTypeSelector';
 import { QuantityInput } from '@/components/trade/QuantityInput';
 import { PriceInputRow } from '@/components/trade/PriceInputRow';
 import { StopLossChart } from '@/components/trade/StopLossChart';
+import { PreTradeChecklist } from '@/components/trade/PreTradeChecklist';
 import { OrderSummary } from '@/components/trade/OrderSummary';
 import { useOrder } from '@/context/OrderContext';
 
@@ -100,6 +101,7 @@ export default function TradeScreen() {
             <PriceInputRow />
             <QuantityInput />
             <StopLossChart />
+            <PreTradeChecklist />
             <OrderSummary />
           </View>
         </ScrollView>
