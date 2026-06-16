@@ -1,21 +1,37 @@
-import React from 'react';
+import React, { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { Colors } from '@/constants/colors';
 import { Fonts } from '@/constants/typography';
 import { Screen } from '@/components/shared/Screen';
 import { TradeLogEntry } from '@/components/journal/TradeLogEntry';
-import { useSession } from '@/context/SessionContext';
+import { useSession, type Trade } from '@/context/SessionContext';
+import { WeeklyHeatMap } from '@/components/journal/WeeklyHeatMap';
 
-const DAYS = ['M', 'T', 'W', 'T', 'F'];
-const HEAT = ['green', 'green', 'yellow', 'empty', 'empty'] as const;
+type FilterKey = 'all' | 'wins' | 'losses' | 'open' | 'overrides';
 
-const heatColors: Record<string, string> = {
-  green: Colors.statusGreen,
-  yellow: Colors.statusYellow,
-  red: Colors.statusRed,
-  empty: Colors.borderDefault,
-};
+const FILTERS: { key: FilterKey; label: string }[] = [
+  { key: 'all', label: 'All' },
+  { key: 'wins', label: 'Wins' },
+  { key: 'losses', label: 'Losses' },
+  { key: 'open', label: 'Open' },
+  { key: 'overrides', label: 'Overrides' },
+];
+
+function matchesFilter(t: Trade, f: FilterKey): boolean {
+  switch (f) {
+    case 'wins':
+      return t.pnl > 0;
+    case 'losses':
+      return t.pnl < 0;
+    case 'open':
+      return t.pnl === 0;
+    case 'overrides':
+      return t.override > 0;
+    default:
+      return true;
+  }
+}
 
 export default function JournalScreen() {
   const { session } = useSession();
@@ -30,14 +46,30 @@ export default function JournalScreen() {
   const overrides = session.trades.filter(t => t.override > 0).length + session.reentryOverrides;
   const tiltPeak = Math.max(...session.trades.map(t => t.tilt), 0);
 
+  const [showFilter, setShowFilter] = useState(false);
+  const [filter, setFilter] = useState<FilterKey>('all');
+  const visibleTrades = useMemo(
+    () => session.trades.filter(t => matchesFilter(t, filter)),
+    [session.trades, filter],
+  );
+  const activeFilterLabel = FILTERS.find(f => f.key === filter)?.label ?? 'Filter';
+
   return (
     <Screen
       header={
         <View style={styles.appBar}>
           <Text style={styles.appBarTitle}>JOURNAL</Text>
-          <Pressable style={styles.filterBtn} accessibilityRole="button" accessibilityLabel="Filter">
-            <Feather name="filter" size={16} color={Colors.textMuted} />
-            <Text style={styles.filterText}>Filter</Text>
+          <Pressable
+            style={[styles.filterBtn, filter !== 'all' && styles.filterBtnActive]}
+            onPress={() => setShowFilter(v => !v)}
+            accessibilityRole="button"
+            accessibilityLabel="Filter trades"
+            accessibilityState={{ expanded: showFilter }}
+          >
+            <Feather name="filter" size={16} color={filter !== 'all' ? Colors.accentPrimary : Colors.textMuted} />
+            <Text style={[styles.filterText, filter !== 'all' && styles.filterTextActive]}>
+              {filter === 'all' ? 'Filter' : activeFilterLabel}
+            </Text>
           </Pressable>
         </View>
       }
@@ -47,14 +79,39 @@ export default function JournalScreen() {
         Today — {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
       </Text>
 
+      {/* Filter chips */}
+      {showFilter && (
+        <View style={styles.filterRow}>
+          {FILTERS.map(f => {
+            const active = filter === f.key;
+            return (
+              <Pressable
+                key={f.key}
+                style={[styles.filterChip, active && styles.filterChipActive]}
+                onPress={() => setFilter(f.key)}
+                accessibilityRole="button"
+                accessibilityState={{ selected: active }}
+              >
+                <Text style={[styles.filterChipText, active && styles.filterChipTextActive]}>{f.label}</Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      )}
+
       {/* Trade list */}
       {session.trades.length === 0 ? (
         <View style={styles.empty}>
           <Feather name="book" size={32} color={Colors.textMuted} />
           <Text style={styles.emptyText}>No trades logged today</Text>
         </View>
+      ) : visibleTrades.length === 0 ? (
+        <View style={styles.empty}>
+          <Feather name="filter" size={28} color={Colors.textMuted} />
+          <Text style={styles.emptyText}>No trades match this filter</Text>
+        </View>
       ) : (
-        session.trades.map(trade => <TradeLogEntry key={trade.id} trade={trade} />)
+        visibleTrades.map(trade => <TradeLogEntry key={trade.id} trade={trade} />)
       )}
 
       {/* Session summary */}
@@ -113,16 +170,7 @@ export default function JournalScreen() {
         <View style={styles.dividerLine} />
       </View>
 
-      <View style={styles.heatMap}>
-        {DAYS.map((day, i) => (
-          <View key={i} style={styles.heatDay}>
-            <Text style={styles.heatLabel}>{day}</Text>
-            <View
-              style={[styles.heatSquare, { backgroundColor: `${heatColors[HEAT[i]]}40`, borderColor: heatColors[HEAT[i]] }]}
-            />
-          </View>
-        ))}
-      </View>
+      <WeeklyHeatMap />
     </Screen>
   );
 }
@@ -208,25 +256,29 @@ const styles = StyleSheet.create({
     fontFamily: 'DMSans_500Medium',
     color: Colors.statusGreen,
   },
-  heatMap: {
+  filterBtnActive: {},
+  filterTextActive: { color: Colors.accentPrimary },
+  filterRow: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
-    backgroundColor: Colors.bgCard,
-    borderRadius: 12,
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  filterChip: {
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 999,
     borderWidth: 1,
     borderColor: Colors.borderDefault,
-    padding: 16,
+    backgroundColor: Colors.bgCard,
   },
-  heatDay: { alignItems: 'center', gap: 8 },
-  heatLabel: {
-    fontSize: 12,
+  filterChipActive: {
+    borderColor: Colors.accentPrimary,
+    backgroundColor: `${Colors.accentPrimary}20`,
+  },
+  filterChipText: {
+    fontSize: 13,
     fontFamily: 'DMSans_500Medium',
     color: Colors.textMuted,
   },
-  heatSquare: {
-    width: 40,
-    height: 40,
-    borderRadius: 8,
-    borderWidth: 1,
-  },
+  filterChipTextActive: { color: Colors.accentPrimary },
 });

@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { Feather } from '@expo/vector-icons';
+import { router } from 'expo-router';
 import { Colors } from '@/constants/colors';
 import { ContentWidth, Space } from '@/constants/layout';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
@@ -40,10 +41,20 @@ export default function DashboardScreen() {
         <View style={styles.appBar}>
           <Text style={styles.brand}>TRADESLAYER</Text>
           <View style={styles.actions}>
-            <Pressable style={styles.iconBtn} accessibilityRole="button" accessibilityLabel="Settings">
+            <Pressable
+              style={styles.iconBtn}
+              onPress={() => router.push('/settings')}
+              accessibilityRole="button"
+              accessibilityLabel="Settings"
+            >
               <Feather name="settings" size={18} color={Colors.textMuted} />
             </Pressable>
-            <Pressable style={styles.iconBtn} accessibilityRole="button" accessibilityLabel="Notifications">
+            <Pressable
+              style={styles.iconBtn}
+              onPress={() => router.push('/notifications')}
+              accessibilityRole="button"
+              accessibilityLabel="Notifications"
+            >
               <Feather name="bell" size={18} color={Colors.textMuted} />
             </Pressable>
           </View>

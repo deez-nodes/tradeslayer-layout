@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable, Modal } from 'react-native';
 import { Feather } from '@expo/vector-icons';
+import { router } from 'expo-router';
 import { Colors } from '@/constants/colors';
 import { Fonts } from '@/constants/typography';
 import { Shadow } from '@/constants/shadows';
@@ -21,10 +22,31 @@ const categoryColors: Record<string, string> = {
 };
 
 export function StrategyCardDetail({ card, visible, onClose }: Props) {
-  const { session } = useSession();
+  const { session, addTrade } = useSession();
   const [tier1, setTier1] = useState(card.tier1);
   const [tier2, setTier2] = useState(card.tier2);
   const [tier3, setTier3] = useState(card.tier3);
+
+  // Open a journal entry from this card: an executed entry at the session's
+  // current instrument/lots, P&L unrealized (0) until an exit is recorded —
+  // mirroring how OrderContext bridges a filled order into the journal.
+  const handleLogTrade = () => {
+    addTrade({
+      strategy: card.name,
+      instrument: session.instrument,
+      pnl: 0,
+      time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+      duration: '—',
+      lots: session.lots,
+      tilt: session.tiltScore,
+      override: 0,
+      exitType: 'Manual',
+      at: Date.now(),
+      source: 'manual',
+    });
+    onClose();
+    router.navigate('/journal');
+  };
 
   const catColor = categoryColors[card.category] ?? Colors.accentPrimary;
   const t1Score = tier1.filter(t => t.checked).length;
@@ -157,7 +179,7 @@ export function StrategyCardDetail({ card, visible, onClose }: Props) {
             </View>
           </View>
 
-          <Pressable style={styles.ctaButton} accessibilityRole="button">
+          <Pressable style={styles.ctaButton} onPress={handleLogTrade} accessibilityRole="button" accessibilityLabel="Log trade with this card">
             <Text style={styles.ctaText}>LOG TRADE WITH THIS CARD</Text>
           </Pressable>
         </ScrollView>

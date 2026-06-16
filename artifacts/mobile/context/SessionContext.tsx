@@ -59,12 +59,19 @@ export type SessionState = StoredSession & {
   sessionStatus: SessionStatus;
 };
 
+/** The user-editable guardrail + instrument config (edited in Settings). */
+export type SessionConfig = Pick<
+  StoredSession,
+  'dailyGoal' | 'maxLoss' | 'maxTrades' | 'maxLots' | 'instrument' | 'lots'
+>;
+
 type SessionContextType = {
   session: SessionState;
   hydrated: boolean;
   addTrade: (trade: Omit<Trade, 'id' | 'number'>) => void;
   updateLots: (lots: number) => void;
   updateInstrument: (instrument: string) => void;
+  updateConfig: (patch: Partial<SessionConfig>) => void;
   startReentryCountdown: () => void;
   overrideReentry: () => void;
   endSession: () => void;
@@ -165,6 +172,10 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     setStored((prev) => ({ ...prev, instrument }));
   }, []);
 
+  const updateConfig = useCallback((patch: Partial<SessionConfig>) => {
+    setStored((prev) => ({ ...prev, ...patch }));
+  }, []);
+
   const startReentryCountdown = useCallback(() => {
     if (intervalRef.current) return; // already running
     setReentryCountdown(REENTRY_SECONDS);
@@ -239,12 +250,13 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
       addTrade,
       updateLots,
       updateInstrument,
+      updateConfig,
       startReentryCountdown,
       overrideReentry,
       endSession,
       resetSession,
     }),
-    [session, hydrated, addTrade, updateLots, updateInstrument, startReentryCountdown, overrideReentry, endSession, resetSession],
+    [session, hydrated, addTrade, updateLots, updateInstrument, updateConfig, startReentryCountdown, overrideReentry, endSession, resetSession],
   );
 
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;

@@ -43,10 +43,6 @@ export default function CardsScreen() {
               <Text style={styles.appBarTitle}>Strategy Cards</Text>
               <Text style={styles.appBarSub}>{strategyCards.length} trading playbooks</Text>
             </View>
-            <View style={styles.appBarActions}>
-              <Feather name="edit-2" size={18} color={Colors.textMuted} />
-              <Feather name="trending-up" size={18} color={Colors.textMuted} />
-            </View>
           </View>
         }
         subHeader={
@@ -134,11 +130,6 @@ const styles = StyleSheet.create({
     fontFamily: 'DMSans_400Regular',
     color: Colors.textMuted,
     marginTop: 2,
-  },
-  appBarActions: {
-    flexDirection: 'row',
-    gap: 14,
-    alignItems: 'center',
   },
   searchRow: {
     flexDirection: 'row',

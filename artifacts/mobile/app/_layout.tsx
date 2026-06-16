@@ -35,6 +35,8 @@ function RootLayoutNav() {
       }}
     >
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      <Stack.Screen name="settings" options={{ presentation: 'modal' }} />
+      <Stack.Screen name="notifications" options={{ presentation: 'modal' }} />
     </Stack>
   );
 }
