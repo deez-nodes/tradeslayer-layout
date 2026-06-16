@@ -2,6 +2,8 @@ import React from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { Colors } from '@/constants/colors';
+import { Fonts } from '@/constants/typography';
+import { useHover } from '@/hooks/useHover';
 import { StrategyCard } from '@/data/strategyCards';
 
 type Props = {
@@ -27,10 +29,14 @@ export function StrategyCardItem({ card, onPress }: Props) {
   const riskColor = riskColors[card.risk] ?? Colors.textMuted;
   const tier1Met = card.tier1.filter(t => t.checked).length;
   const tier2Weight = card.tier2.filter(t => t.active).reduce((a, b) => a + b.weight, 0);
+  const { hovered, hoverProps } = useHover();
 
   return (
     <Pressable
-      style={({ pressed }) => [styles.container, { opacity: pressed ? 0.85 : 1, borderLeftColor: catColor }]}
+      {...hoverProps}
+      accessibilityRole="button"
+      accessibilityLabel={card.name}
+      style={({ pressed }) => [styles.container, hovered && { backgroundColor: Colors.bgCardHover }, { opacity: pressed ? 0.85 : 1, borderLeftColor: catColor }]}
       onPress={onPress}
     >
       <View style={styles.header}>
@@ -143,7 +149,7 @@ const styles = StyleSheet.create({
   },
   scoreLabel: {
     fontSize: 11,
-    fontFamily: 'DMSans_500Medium',
+    fontFamily: Fonts.monoMedium,
     color: Colors.textMuted,
   },
   scoreDivider: {

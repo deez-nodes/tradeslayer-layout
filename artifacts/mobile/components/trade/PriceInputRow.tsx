@@ -1,7 +1,76 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TextInput, Pressable } from 'react-native';
 import { Colors } from '@/constants/colors';
+import { Fonts } from '@/constants/typography';
 import { useOrder } from '@/context/OrderContext';
+
+const round2 = (n: number) => Math.round(n * 100) / 100;
+
+function PriceField({
+  label,
+  value,
+  onCommit,
+  currentPrice,
+  showDelta = false,
+}: {
+  label: string;
+  value: number;
+  onCommit: (n: number) => void;
+  currentPrice: number;
+  showDelta?: boolean;
+}) {
+  const [text, setText] = useState(value.toFixed(2));
+  const [focused, setFocused] = useState(false);
+
+  // Reflect external changes (+/- buttons, symbol switch) only while not editing,
+  // so the user can freely type partial values like "5210." without it snapping.
+  useEffect(() => {
+    if (!focused) setText(value.toFixed(2));
+  }, [value, focused]);
+
+  const commit = (raw: string) => {
+    const n = parseFloat(raw);
+    if (!Number.isNaN(n) && n > 0) onCommit(round2(n));
+    else setText(value.toFixed(2)); // revert invalid/empty entry
+  };
+
+  return (
+    <View style={styles.row}>
+      <Text style={styles.label}>{label}</Text>
+      <View style={styles.inputWrapper}>
+        <Text style={styles.currency}>$</Text>
+        <TextInput
+          style={styles.input}
+          value={text}
+          onChangeText={setText}
+          onFocus={() => setFocused(true)}
+          onBlur={() => {
+            setFocused(false);
+            commit(text);
+          }}
+          keyboardType="decimal-pad"
+          inputMode="decimal"
+          selectTextOnFocus
+          accessibilityLabel={label}
+        />
+        <View style={styles.adjButtons}>
+          <Pressable style={styles.adjBtn} onPress={() => onCommit(round2(value + 0.25))} accessibilityLabel={`${label} up`}>
+            <Text style={styles.adjText}>+</Text>
+          </Pressable>
+          <Pressable style={styles.adjBtn} onPress={() => onCommit(round2(value - 0.25))} accessibilityLabel={`${label} down`}>
+            <Text style={styles.adjText}>−</Text>
+          </Pressable>
+        </View>
+      </View>
+      {showDelta && (
+        <Text style={styles.delta}>
+          {value > currentPrice ? '+' : ''}
+          {(value - currentPrice).toFixed(2)} pts from current
+        </Text>
+      )}
+    </View>
+  );
+}
 
 export function PriceInputRow() {
   const { orderType, limitPrice, setLimitPrice, stopPrice, setStopPrice, currentPrice } = useOrder();
@@ -19,54 +88,10 @@ export function PriceInputRow() {
   return (
     <View style={styles.container}>
       {(orderType === 'limit' || orderType === 'stop_limit') && (
-        <View style={styles.row}>
-          <Text style={styles.label}>LIMIT PRICE</Text>
-          <View style={styles.inputWrapper}>
-            <Text style={styles.currency}>$</Text>
-            <TextInput
-              style={styles.input}
-              value={limitPrice.toFixed(2)}
-              onChangeText={t => setLimitPrice(parseFloat(t) || currentPrice)}
-              keyboardType="decimal-pad"
-              selectTextOnFocus
-            />
-            <View style={styles.adjButtons}>
-              <Pressable style={styles.adjBtn} onPress={() => setLimitPrice(+(limitPrice + 0.25).toFixed(2))}>
-                <Text style={styles.adjText}>+</Text>
-              </Pressable>
-              <Pressable style={styles.adjBtn} onPress={() => setLimitPrice(+(limitPrice - 0.25).toFixed(2))}>
-                <Text style={styles.adjText}>−</Text>
-              </Pressable>
-            </View>
-          </View>
-          <Text style={styles.delta}>
-            {limitPrice > currentPrice ? '+' : ''}{(limitPrice - currentPrice).toFixed(2)} pts from current
-          </Text>
-        </View>
+        <PriceField label="LIMIT PRICE" value={limitPrice} onCommit={setLimitPrice} currentPrice={currentPrice} showDelta />
       )}
-
       {orderType === 'stop_limit' && (
-        <View style={[styles.row, { marginTop: 12 }]}>
-          <Text style={styles.label}>STOP TRIGGER</Text>
-          <View style={styles.inputWrapper}>
-            <Text style={styles.currency}>$</Text>
-            <TextInput
-              style={styles.input}
-              value={stopPrice.toFixed(2)}
-              onChangeText={t => setStopPrice(parseFloat(t) || currentPrice)}
-              keyboardType="decimal-pad"
-              selectTextOnFocus
-            />
-            <View style={styles.adjButtons}>
-              <Pressable style={styles.adjBtn} onPress={() => setStopPrice(+(stopPrice + 0.25).toFixed(2))}>
-                <Text style={styles.adjText}>+</Text>
-              </Pressable>
-              <Pressable style={styles.adjBtn} onPress={() => setStopPrice(+(stopPrice - 0.25).toFixed(2))}>
-                <Text style={styles.adjText}>−</Text>
-              </Pressable>
-            </View>
-          </View>
-        </View>
+        <PriceField label="STOP TRIGGER" value={stopPrice} onCommit={setStopPrice} currentPrice={currentPrice} />
       )}
     </View>
   );
@@ -79,6 +104,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.borderDefault,
     padding: 14,
+    gap: 14,
   },
   marketBadge: {
     backgroundColor: Colors.bgCard,
@@ -130,7 +156,7 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     fontSize: 22,
-    fontFamily: 'DMSans_700Bold',
+    fontFamily: Fonts.monoBold,
     color: Colors.textPrimary,
   },
   adjButtons: {
@@ -153,7 +179,7 @@ const styles = StyleSheet.create({
   },
   delta: {
     fontSize: 11,
-    fontFamily: 'DMSans_400Regular',
+    fontFamily: Fonts.mono,
     color: Colors.textMuted,
   },
 });

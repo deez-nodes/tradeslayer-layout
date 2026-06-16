@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { Colors } from '@/constants/colors';
+import { Fonts } from '@/constants/typography';
 import { useSession } from '@/context/SessionContext';
 
 export function RegimeBadge() {
@@ -58,7 +59,7 @@ const styles = StyleSheet.create({
   spacer: { flex: 1 },
   stat: {
     fontSize: 13,
-    fontFamily: 'DMSans_500Medium',
+    fontFamily: Fonts.monoMedium,
     color: Colors.textSecondary,
   },
   divider: {

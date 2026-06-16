@@ -1,15 +1,19 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Colors } from '@/constants/colors';
+import { Fonts } from '@/constants/typography';
 import { ProgressBar } from '@/components/shared/ProgressBar';
 import { useSession } from '@/context/SessionContext';
 
 export function TiltMeterFull() {
   const { session } = useSession();
   const score = session.tiltScore;
+  const { consecLosses, givingBack, fastReentry } = session.tiltDrivers;
   const color =
     score < 30 ? Colors.statusGreen : score < 60 ? Colors.statusYellow : Colors.statusRed;
   const label = score < 30 ? 'Green — Clear to trade' : score < 60 ? 'Caution' : 'Danger — Stop';
+
+  const driverColor = (bad: boolean) => (bad ? Colors.statusRed : Colors.statusGreen);
 
   return (
     <View style={styles.container}>
@@ -31,15 +35,15 @@ export function TiltMeterFull() {
       <View style={styles.metaGrid}>
         <View style={styles.metaItem}>
           <Text style={styles.metaLabel}>Consec Losses</Text>
-          <Text style={[styles.metaValue, { color: Colors.statusGreen }]}>0</Text>
+          <Text style={[styles.metaValue, { color: driverColor(consecLosses > 0) }]}>{consecLosses}</Text>
         </View>
         <View style={styles.metaItem}>
           <Text style={styles.metaLabel}>Giving Back</Text>
-          <Text style={[styles.metaValue, { color: Colors.statusGreen }]}>No</Text>
+          <Text style={[styles.metaValue, { color: driverColor(givingBack) }]}>{givingBack ? 'Yes' : 'No'}</Text>
         </View>
         <View style={styles.metaItem}>
           <Text style={styles.metaLabel}>Fast Reentry</Text>
-          <Text style={[styles.metaValue, { color: Colors.statusGreen }]}>No</Text>
+          <Text style={[styles.metaValue, { color: driverColor(fastReentry) }]}>{fastReentry ? 'Yes' : 'No'}</Text>
         </View>
       </View>
     </View>
@@ -91,7 +95,7 @@ const styles = StyleSheet.create({
   },
   bigScore: {
     fontSize: 48,
-    fontFamily: 'DMSans_700Bold',
+    fontFamily: Fonts.monoBold,
     lineHeight: 52,
   },
   outOf: {
@@ -114,6 +118,6 @@ const styles = StyleSheet.create({
   },
   metaValue: {
     fontSize: 14,
-    fontFamily: 'DMSans_700Bold',
+    fontFamily: Fonts.monoBold,
   },
 });

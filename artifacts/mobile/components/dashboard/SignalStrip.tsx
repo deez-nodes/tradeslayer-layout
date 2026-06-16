@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, ScrollView, StyleSheet } from 'react-native';
 import { Colors } from '@/constants/colors';
+import { Fonts } from '@/constants/typography';
 
 type Signal = {
   label: string;
@@ -78,6 +79,6 @@ const styles = StyleSheet.create({
   },
   chipValue: {
     fontSize: 13,
-    fontFamily: 'DMSans_700Bold',
+    fontFamily: Fonts.monoBold,
   },
 });

@@ -2,13 +2,14 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { Colors } from '@/constants/colors';
+import { Fonts } from '@/constants/typography';
 import { useSession } from '@/context/SessionContext';
 
 type GuardrailItem = {
   label: string;
   limit: string;
   value: string;
-  status: 'ok' | 'warn' | 'danger';
+  status: 'ok' | 'warn' | 'danger' | 'neutral';
 };
 
 export function GuardrailStatus() {
@@ -19,7 +20,7 @@ export function GuardrailStatus() {
       label: 'Daily goal',
       limit: `$${session.dailyGoal}`,
       value: `$${session.pnl}`,
-      status: session.pnl >= session.dailyGoal ? 'ok' : 'ok',
+      status: session.pnl >= session.dailyGoal ? 'ok' : 'neutral',
     },
     {
       label: 'Max loss',
@@ -58,9 +59,17 @@ export function GuardrailStatus() {
               ? Colors.statusGreen
               : item.status === 'warn'
               ? Colors.statusYellow
+              : item.status === 'neutral'
+              ? Colors.textMuted
               : Colors.statusRed;
           const icon =
-            item.status === 'ok' ? 'check-circle' : item.status === 'warn' ? 'alert-triangle' : 'x-circle';
+            item.status === 'ok'
+              ? 'check-circle'
+              : item.status === 'warn'
+              ? 'alert-triangle'
+              : item.status === 'neutral'
+              ? 'circle'
+              : 'x-circle';
           return (
             <View key={item.label} style={styles.row}>
               <Text style={styles.rowLabel}>{item.label}</Text>
@@ -107,14 +116,14 @@ const styles = StyleSheet.create({
   },
   rowLimit: {
     fontSize: 13,
-    fontFamily: 'DMSans_500Medium',
+    fontFamily: Fonts.monoMedium,
     color: Colors.textPrimary,
     width: 60,
   },
   spacer: { flex: 1 },
   rowValue: {
     fontSize: 13,
-    fontFamily: 'DMSans_700Bold',
+    fontFamily: Fonts.monoBold,
     marginRight: 4,
   },
 });

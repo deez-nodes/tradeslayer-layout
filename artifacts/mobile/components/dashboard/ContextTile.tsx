@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Colors } from '@/constants/colors';
+import { Fonts } from '@/constants/typography';
 
 type Props = {
   label: string;
@@ -41,7 +42,7 @@ const styles = StyleSheet.create({
   },
   value: {
     fontSize: 17,
-    fontFamily: 'DMSans_700Bold',
+    fontFamily: Fonts.monoBold,
     color: Colors.textPrimary,
   },
   subtitle: {

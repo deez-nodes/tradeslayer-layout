@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Colors } from '@/constants/colors';
+import { Fonts } from '@/constants/typography';
 import { ProgressBar } from '@/components/shared/ProgressBar';
 import { useSession } from '@/context/SessionContext';
 
@@ -47,7 +48,7 @@ const styles = StyleSheet.create({
   },
   score: {
     fontSize: 14,
-    fontFamily: 'DMSans_700Bold',
+    fontFamily: Fonts.monoBold,
   },
   spacer: { flex: 1 },
   status: {

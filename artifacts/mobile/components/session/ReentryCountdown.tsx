@@ -2,13 +2,14 @@ import React from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { Colors } from '@/constants/colors';
+import { Fonts } from '@/constants/typography';
 import { ProgressBar } from '@/components/shared/ProgressBar';
 import { useSession } from '@/context/SessionContext';
 
 const TOTAL_SECONDS = 120;
 
 export function ReentryCountdown() {
-  const { session, startReentryCountdown } = useSession();
+  const { session, startReentryCountdown, overrideReentry } = useSession();
   const { reentryCountdown } = session;
 
   if (reentryCountdown === null) {
@@ -37,7 +38,12 @@ export function ReentryCountdown() {
       <ProgressBar progress={progress} color={Colors.statusYellow} height={6} />
       <View style={styles.footer}>
         <Text style={styles.footerText}>remaining</Text>
-        <Pressable style={styles.overrideBtn}>
+        <Pressable
+          style={styles.overrideBtn}
+          onPress={overrideReentry}
+          accessibilityRole="button"
+          accessibilityLabel="Override reentry cooldown (logged)"
+        >
           <Text style={styles.overrideText}>Override (logged)</Text>
           <Feather name="arrow-right" size={12} color={Colors.textMuted} />
         </Pressable>
@@ -68,7 +74,7 @@ const styles = StyleSheet.create({
   },
   time: {
     fontSize: 22,
-    fontFamily: 'DMSans_700Bold',
+    fontFamily: Fonts.monoBold,
   },
   footer: {
     flexDirection: 'row',

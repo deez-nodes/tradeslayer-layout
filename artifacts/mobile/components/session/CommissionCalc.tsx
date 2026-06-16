@@ -1,27 +1,41 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TextInput, Pressable } from 'react-native';
 import { Colors } from '@/constants/colors';
+import { Fonts } from '@/constants/typography';
 import { useSession } from '@/context/SessionContext';
+import { INSTRUMENT_SYMBOLS, instrumentInfo } from '@/constants/instruments';
 
-const INSTRUMENTS = ['MES', 'ES', 'NQ', 'MNQ', 'RTY', 'YM'];
-const RT_COST_PER_LOT: Record<string, number> = {
-  MES: 4, ES: 4, NQ: 4, MNQ: 4, RTY: 4, YM: 4,
-};
-const AVG_WIN: Record<string, number> = {
-  MES: 83, ES: 415, NQ: 800, MNQ: 80, RTY: 500, YM: 430,
-};
+const GOOD_COST_PCT = 6; // commission drag this share of an avg win or less = healthy
 
 export function CommissionCalc() {
-  const { session } = useSession();
-  const [lots, setLots] = useState(String(session.lots));
-  const [instrument, setInstrument] = useState(session.instrument);
+  const { session, updateLots, updateInstrument } = useSession();
+  const instrument = session.instrument;
+  const numLots = Math.max(1, session.lots);
 
-  const numLots = parseInt(lots) || 1;
-  const rtCost = (RT_COST_PER_LOT[instrument] ?? 4) * numLots;
-  const avgWin = AVG_WIN[instrument] ?? 83;
-  const costPct = ((rtCost / avgWin) * 100).toFixed(1);
-  const breakevenWR = (rtCost / (rtCost + avgWin) * 100).toFixed(0);
-  const isGood = parseFloat(costPct) < 8;
+  const [lotsText, setLotsText] = useState(String(numLots));
+  useEffect(() => {
+    setLotsText(String(Math.max(1, session.lots)));
+  }, [session.lots]);
+
+  const info = instrumentInfo(instrument);
+  const rtCostTotal = info.rtCostPerLot * numLots;
+
+  // Cost/Win is lot-independent (both commission and win scale with lots):
+  // rtCostPerLot / avgWinPerLot. For MES: 4 / 83 = 4.8% (matches spec).
+  const costPct = (info.rtCostPerLot / info.avgWin) * 100;
+
+  // Break-even win rate with commission drag, solving
+  //   WR·(avgWin − rt) = (1 − WR)·(avgLoss + rt)  ⇒  WR = (avgLoss + rt)/(avgWin + avgLoss).
+  // With the ~1:1 baseline (avgLoss ≈ avgWin) this yields ≈52% for MES.
+  const breakevenWR = ((info.avgLoss + info.rtCostPerLot) / (info.avgWin + info.avgLoss)) * 100;
+
+  const isGood = costPct <= GOOD_COST_PCT;
+
+  const onLotsChange = (t: string) => {
+    setLotsText(t);
+    const n = parseInt(t, 10);
+    if (!Number.isNaN(n) && n > 0) updateLots(n);
+  };
 
   return (
     <View style={styles.container}>
@@ -32,21 +46,25 @@ export function CommissionCalc() {
           <Text style={styles.inputLabel}>Lots</Text>
           <TextInput
             style={styles.input}
-            value={lots}
-            onChangeText={setLots}
+            value={lotsText}
+            onChangeText={onLotsChange}
+            onBlur={() => setLotsText(String(numLots))}
             keyboardType="numeric"
             maxLength={2}
             selectTextOnFocus
+            accessibilityLabel="Lots"
           />
         </View>
         <View style={styles.inputGroup}>
           <Text style={styles.inputLabel}>Instrument</Text>
           <View style={styles.instrumentRow}>
-            {INSTRUMENTS.map(ins => (
+            {INSTRUMENT_SYMBOLS.map((ins) => (
               <Pressable
                 key={ins}
                 style={[styles.instrChip, instrument === ins && styles.instrChipActive]}
-                onPress={() => setInstrument(ins)}
+                onPress={() => updateInstrument(ins)}
+                accessibilityRole="button"
+                accessibilityState={{ selected: instrument === ins }}
               >
                 <Text style={[styles.instrText, instrument === ins && styles.instrTextActive]}>
                   {ins}
@@ -60,17 +78,17 @@ export function CommissionCalc() {
       <View style={styles.resultRow}>
         <View style={styles.result}>
           <Text style={styles.resultLabel}>RT Cost</Text>
-          <Text style={styles.resultValue}>${rtCost.toFixed(2)}</Text>
+          <Text style={styles.resultValue}>${rtCostTotal.toFixed(2)}</Text>
         </View>
         <View style={styles.result}>
           <Text style={styles.resultLabel}>Cost/Win</Text>
           <Text style={[styles.resultValue, { color: isGood ? Colors.statusGreen : Colors.statusRed }]}>
-            {costPct}% {isGood ? '✓' : '✗'}
+            {costPct.toFixed(1)}% {isGood ? '✓' : '✗'}
           </Text>
         </View>
         <View style={styles.result}>
           <Text style={styles.resultLabel}>BE Win Rate</Text>
-          <Text style={styles.resultValue}>{breakevenWR}%</Text>
+          <Text style={styles.resultValue}>{breakevenWR.toFixed(0)}%</Text>
         </View>
       </View>
     </View>
@@ -111,7 +129,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
     fontSize: 16,
-    fontFamily: 'DMSans_700Bold',
+    fontFamily: Fonts.monoBold,
     color: Colors.textPrimary,
     width: 80,
   },
@@ -155,7 +173,7 @@ const styles = StyleSheet.create({
   },
   resultValue: {
     fontSize: 15,
-    fontFamily: 'DMSans_700Bold',
+    fontFamily: Fonts.monoBold,
     color: Colors.textPrimary,
   },
 });
