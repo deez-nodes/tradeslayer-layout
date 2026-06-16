@@ -31,10 +31,10 @@ export function PriceInputRow() {
               selectTextOnFocus
             />
             <View style={styles.adjButtons}>
-              <Pressable style={styles.adjBtn} onPress={() => setLimitPrice(p => +(p + 0.25).toFixed(2))}>
+              <Pressable style={styles.adjBtn} onPress={() => setLimitPrice(+(limitPrice + 0.25).toFixed(2))}>
                 <Text style={styles.adjText}>+</Text>
               </Pressable>
-              <Pressable style={styles.adjBtn} onPress={() => setLimitPrice(p => +(p - 0.25).toFixed(2))}>
+              <Pressable style={styles.adjBtn} onPress={() => setLimitPrice(+(limitPrice - 0.25).toFixed(2))}>
                 <Text style={styles.adjText}>−</Text>
               </Pressable>
             </View>
@@ -58,10 +58,10 @@ export function PriceInputRow() {
               selectTextOnFocus
             />
             <View style={styles.adjButtons}>
-              <Pressable style={styles.adjBtn} onPress={() => setStopPrice(p => +(p + 0.25).toFixed(2))}>
+              <Pressable style={styles.adjBtn} onPress={() => setStopPrice(+(stopPrice + 0.25).toFixed(2))}>
                 <Text style={styles.adjText}>+</Text>
               </Pressable>
-              <Pressable style={styles.adjBtn} onPress={() => setStopPrice(p => +(p - 0.25).toFixed(2))}>
+              <Pressable style={styles.adjBtn} onPress={() => setStopPrice(+(stopPrice - 0.25).toFixed(2))}>
                 <Text style={styles.adjText}>−</Text>
               </Pressable>
             </View>

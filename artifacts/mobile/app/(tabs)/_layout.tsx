@@ -2,7 +2,7 @@ import { BlurView } from 'expo-blur';
 import { isLiquidGlassAvailable } from 'expo-glass-effect';
 import { Tabs } from 'expo-router';
 import { Icon, Label, NativeTabs } from 'expo-router/unstable-native-tabs';
-import { SymbolView } from 'expo-symbols';
+import { SymbolView, type SymbolViewProps } from 'expo-symbols';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import React from 'react';
 import { Platform, StyleSheet, View } from 'react-native';
@@ -46,7 +46,7 @@ function ClassicTabLayout() {
     color,
     size,
   }: {
-    sfSymbol: string;
+    sfSymbol: SymbolViewProps['name'];
     featherName: string;
     color: string;
     size: number;
