@@ -2,95 +2,72 @@
 
 ## Overview
 
-pnpm workspace monorepo using TypeScript. Each package manages its own dependencies.
+**TradeSlayer Pro** is a mobile-first day-trading *discipline & journaling* app built with Expo Router / React Native. It runs on iOS/Android (Expo) and on the web via `react-native-web`. State is **local-first** — there is no backend; session, orders, and journal data are persisted on-device with AsyncStorage.
+
+The repository is a pnpm workspace with a single package, `artifacts/mobile`. (The workspace layout is retained so additional packages — e.g. a future broker proxy — can be added later.)
 
 ## Stack
 
-- **Monorepo tool**: pnpm workspaces
+- **App framework**: Expo SDK 54, expo-router 6
+- **UI runtime**: React 19, React Native 0.81, `react-native-web` (web target)
+- **Language**: TypeScript 5.9 (strict)
+- **Persistence**: `@react-native-async-storage/async-storage` (local-first)
+- **Graphics/animation**: `react-native-svg`, `react-native-reanimated`, `react-native-gesture-handler`
+- **Bundler**: Metro (native + web export)
 - **Node.js version**: 24
 - **Package manager**: pnpm
-- **TypeScript version**: 5.9
-- **API framework**: Express 5
-- **Database**: PostgreSQL + Drizzle ORM
-- **Validation**: Zod (`zod/v4`), `drizzle-zod`
-- **API codegen**: Orval (from OpenAPI spec)
-- **Build**: esbuild (CJS bundle)
 
 ## Structure
 
 ```text
-artifacts-monorepo/
-├── artifacts/              # Deployable applications
-│   └── api-server/         # Express API server
-├── lib/                    # Shared libraries
-│   ├── api-spec/           # OpenAPI spec + Orval codegen config
-│   ├── api-client-react/   # Generated React Query hooks
-│   ├── api-zod/            # Generated Zod schemas from OpenAPI
-│   └── db/                 # Drizzle ORM schema + DB connection
-├── scripts/                # Utility scripts (single workspace package)
-│   └── src/                # Individual .ts scripts, run via `pnpm --filter @workspace/scripts run <script>`
-├── pnpm-workspace.yaml     # pnpm workspace (artifacts/*, lib/*, lib/integrations/*, scripts)
-├── tsconfig.base.json      # Shared TS options (composite, bundler resolution, es2022)
-├── tsconfig.json           # Root TS project references
-└── package.json            # Root package with hoisted devDeps
+tradeslayer-layout/
+├── artifacts/
+│   └── mobile/                 # The app (@workspace/mobile)
+│       ├── app/                # expo-router routes — (tabs)/ = Dashboard, Trade, Session, Journal, Cards
+│       ├── components/         # Feature UI: dashboard/, trade/, session/, journal/, cards/, shared/
+│       ├── context/            # SessionContext, OrderContext (app state + AsyncStorage hydration)
+│       ├── constants/          # colors, instruments, layout, nav, typography, shadows
+│       ├── data/               # strategyCards.ts (seed strategy cards)
+│       ├── hooks/              # useResponsiveLayout, useHover
+│       ├── lib/                # storage.ts (AsyncStorage helpers), tilt.ts (tilt computation)
+│       ├── server/             # serve.js — serves the exported web build (dist/) with SPA fallback + /status
+│       ├── scripts/            # build.js — native Expo Go build helper
+│       ├── app.json            # Expo config (web output: single-page)
+│       ├── metro.config.js     # Metro bundler config
+│       └── tsconfig.json       # extends expo/tsconfig.base
+├── attached_assets/            # Design spec (tradeslayer-layout-structure_*.md)
+├── DEPLOY.md                   # Deployment instructions
+├── pnpm-workspace.yaml         # workspace (artifacts/mobile) + catalog + platform overrides
+├── tsconfig.base.json          # shared TS base
+├── tsconfig.json               # root TS project references (empty — app self-typechecks)
+└── package.json                # root scripts (typecheck, build)
 ```
 
-## TypeScript & Composite Projects
+## Root scripts
 
-Every package extends `tsconfig.base.json` which sets `composite: true`. The root `tsconfig.json` lists all packages as project references. This means:
+- `pnpm run typecheck` — typechecks every `artifacts/**` package (currently just the mobile app).
+- `pnpm run build` — typechecks, then runs each package's `build` (mobile: `expo export --platform web`).
 
-- **Always typecheck from the root** — run `pnpm run typecheck` (which runs `tsc --build --emitDeclarationOnly`). This builds the full dependency graph so that cross-package imports resolve correctly. Running `tsc` inside a single package will fail if its dependencies haven't been built yet.
-- **`emitDeclarationOnly`** — we only emit `.d.ts` files during typecheck; actual JS bundling is handled by esbuild/tsx/vite...etc, not `tsc`.
-- **Project references** — when package A depends on package B, A's `tsconfig.json` must list B in its `references` array. `tsc --build` uses this to determine build order and skip up-to-date packages.
+## App scripts (`artifacts/mobile`)
 
-## Root Scripts
+Run with `pnpm --filter @workspace/mobile run <script>`:
 
-- `pnpm run build` — runs `typecheck` first, then recursively runs `build` in all packages that define it
-- `pnpm run typecheck` — runs `tsc --build --emitDeclarationOnly` using project references
+- `dev` — `expo start` (Metro dev server; open in Expo Go or a simulator)
+- `web` — `expo start --web` (web dev server)
+- `build` — `expo export --platform web --output-dir dist` (static web build)
+- `serve` — `node server/serve.js` (serve the exported `dist/` with SPA fallback; `/status` health route)
+- `build:native` — `node scripts/build.js` (native Expo Go build)
+- `typecheck` — `tsc -p tsconfig.json --noEmit`
 
-## Packages
+## State & persistence
 
-### `artifacts/api-server` (`@workspace/api-server`)
+Two React contexts hold all app state and persist to AsyncStorage via `lib/storage.ts`:
 
-Express 5 API server. Routes live in `src/routes/` and use `@workspace/api-zod` for request and response validation and `@workspace/db` for persistence.
+- **`SessionContext`** — the trading session: P&L, peak P&L, trades (the journal), tilt score (computed in `lib/tilt.ts` from consecutive losses / giving-back / fast-reentry), reentry countdown, guardrail config (daily goal, max loss, max trades, max lots), and regime context. Hydrates on launch, then persists on change.
+- **`OrderContext`** — the order ticket and placed orders. On a fill it bridges an executed entry into the session journal (`addTrade`). With no broker configured (`EXPO_PUBLIC_DOMAIN` unset) it fills locally and flags the order `simulated`; if a broker proxy URL is set, it POSTs to `${EXPO_PUBLIC_DOMAIN}/api/orders` and surfaces the real outcome (no fabricated fills).
 
-- Entry: `src/index.ts` — reads `PORT`, starts Express
-- App setup: `src/app.ts` — mounts CORS, JSON/urlencoded parsing, routes at `/api`
-- Routes: `src/routes/index.ts` mounts sub-routers; `src/routes/health.ts` exposes `GET /health` (full path: `/api/health`)
-- Depends on: `@workspace/db`, `@workspace/api-zod`
-- `pnpm --filter @workspace/api-server run dev` — run the dev server
-- `pnpm --filter @workspace/api-server run build` — production esbuild bundle (`dist/index.cjs`)
-- Build bundles an allowlist of deps (express, cors, pg, drizzle-orm, zod, etc.) and externalizes the rest
+Dashboard market data (signals, alerts, context tiles, chart candles) is **simulated demo data**, clearly labeled in the UI.
 
-### `lib/db` (`@workspace/db`)
+## Deployment
 
-Database layer using Drizzle ORM with PostgreSQL. Exports a Drizzle client instance and schema models.
-
-- `src/index.ts` — creates a `Pool` + Drizzle instance, exports schema
-- `src/schema/index.ts` — barrel re-export of all models
-- `src/schema/<modelname>.ts` — table definitions with `drizzle-zod` insert schemas (no models definitions exist right now)
-- `drizzle.config.ts` — Drizzle Kit config (requires `DATABASE_URL` in the environment)
-- Exports: `.` (pool, db, schema), `./schema` (schema only)
-
-In development, we use `pnpm --filter @workspace/db run push`, and we fallback to `pnpm --filter @workspace/db run push-force`. Production migrations should be run as part of your deployment pipeline.
-
-### `lib/api-spec` (`@workspace/api-spec`)
-
-Owns the OpenAPI 3.1 spec (`openapi.yaml`) and the Orval config (`orval.config.ts`). Running codegen produces output into two sibling packages:
-
-1. `lib/api-client-react/src/generated/` — React Query hooks + fetch client
-2. `lib/api-zod/src/generated/` — Zod schemas
-
-Run codegen: `pnpm --filter @workspace/api-spec run codegen`
-
-### `lib/api-zod` (`@workspace/api-zod`)
-
-Generated Zod schemas from the OpenAPI spec (e.g. `HealthCheckResponse`). Used by `api-server` for response validation.
-
-### `lib/api-client-react` (`@workspace/api-client-react`)
-
-Generated React Query hooks and fetch client from the OpenAPI spec (e.g. `useHealthCheck`, `healthCheck`).
-
-### `scripts` (`@workspace/scripts`)
-
-Utility scripts package. Each script is a `.ts` file in `src/` with a corresponding npm script in `package.json`. Run scripts via `pnpm --filter @workspace/scripts run <script>`. Scripts can import any workspace package (e.g., `@workspace/db`) by adding it as a dependency in `scripts/package.json`.
+See [DEPLOY.md](DEPLOY.md). The web build is `expo export --platform web` served by `server/serve.js`; native builds go through Expo.
