@@ -1,10 +1,28 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, lazy, Suspense } from 'react';
 import { Search, X, Layers, Bookmark, ArrowLeft, Check } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Colors } from '@/constants/colors';
 import { strategyCards, type StrategyCard } from '@/data/strategyCards';
 import { useSession } from '@/context/SessionContext';
 import { cn } from '@/lib/cn';
+
+// Lazy load the 14 rich, interactive strategy card components
+const cardComponents: Record<string, React.LazyExoticComponent<React.ComponentType<any>>> = {
+  '1': lazy(() => import('@/components/strategy-cards/pullback-strategy-card')),
+  '2': lazy(() => import('@/components/strategy-cards/reversal-strategy-card')),
+  '3': lazy(() => import('@/components/strategy-cards/stop-run-strategy-card')),
+  '4': lazy(() => import('@/components/strategy-cards/momentum-strategy-card')),
+  '5': lazy(() => import('@/components/strategy-cards/support-resistance-strategy-card')),
+  '6': lazy(() => import('@/components/strategy-cards/session-volume-profile-strategy-card')),
+  '7': lazy(() => import('@/components/strategy-cards/absorption-exhaustion-spoof-card')),
+  '8': lazy(() => import('@/components/strategy-cards/cvd-strategy-card')),
+  '9': lazy(() => import('@/components/strategy-cards/iceberg-strategy-card')),
+  '10': lazy(() => import('@/components/strategy-cards/imbalance-strategy-card')),
+  '11': lazy(() => import('@/components/strategy-cards/large-lots-strategy-card')),
+  '12': lazy(() => import('@/components/strategy-cards/liquidity-regime-strategy-card')),
+  '13': lazy(() => import('@/components/strategy-cards/liquidity-tracker-pro-card')),
+  '14': lazy(() => import('@/components/strategy-cards/volume-bubbles-strategy-card')),
+};
 
 const CATEGORIES = ['All', 'Trend', 'Momentum', 'Mean Rev', 'Breakout'] as const;
 
@@ -104,6 +122,92 @@ function StrategyCardDetail({ card, onClose }: { card: StrategyCard; onClose: ()
     onClose();
     navigate('/journal');
   };
+
+  const CustomCardComponent = cardComponents[card.id];
+
+  // If a custom rich strategy card component is registered, render it with full integration
+  if (CustomCardComponent) {
+    return (
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-[2px]"
+        onClick={onClose}
+        role="presentation"
+      >
+        <div
+          className="relative flex h-[85vh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl border border-line bg-[#010409] shadow-2xl transition-all"
+          onClick={(e) => e.stopPropagation()}
+          role="dialog"
+          aria-modal="true"
+          aria-label={card.name}
+        >
+          {/* Floating Close Button */}
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close"
+            className="absolute right-4 top-4 z-50 flex h-9 w-9 items-center justify-center rounded-lg bg-black/40 text-fg transition-colors border border-line hover:bg-[#161b22]"
+            style={{ color: '#fff' }}
+          >
+            <X size={20} />
+          </button>
+
+          {/* Lazy Loaded Interactive Custom Card */}
+          <div className="flex-1 overflow-y-auto min-h-0 bg-[#010409]">
+            <Suspense fallback={
+              <div className="flex h-full items-center justify-center bg-[#010409]">
+                <div className="flex flex-col items-center gap-3">
+                  <span className="h-8 w-8 animate-spin rounded-full border-2 border-accent border-t-transparent" />
+                  <p className="text-sm text-fg-mute font-mono">LOADING PLAYBOOK...</p>
+                </div>
+              </div>
+            }>
+              <CustomCardComponent />
+            </Suspense>
+          </div>
+
+          {/* Integrated Action and Telemetry Bar */}
+          <div className="flex flex-col gap-3 border-t border-line bg-[#0d1117] p-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex gap-5">
+                <div className="flex flex-col gap-0.5">
+                  <span className="text-[10px] text-fg-mute font-bold uppercase tracking-[1px]">TILT GUARD</span>
+                  <span
+                    className="font-mono text-base font-bold"
+                    style={{ color: session.tiltScore < 30 ? Colors.statusGreen : Colors.statusYellow }}
+                  >
+                    {session.tiltScore} / 100
+                  </span>
+                </div>
+                <div className="inline-block bg-line" style={{ width: 1, height: 28 }} />
+                <div className="flex flex-col gap-0.5">
+                  <span className="text-[10px] text-fg-mute font-bold uppercase tracking-[1px]">REENTRY COOLDOWN</span>
+                  <span className="font-mono text-base font-bold" style={{ color: Colors.statusGreen }}>
+                    {session.reentryCountdown === null ? 'CLEARED' : `${session.reentryCountdown}s`}
+                  </span>
+                </div>
+                <div className="inline-block bg-line" style={{ width: 1, height: 28 }} />
+                <div className="flex flex-col gap-0.5">
+                  <span className="text-[10px] text-fg-mute font-bold uppercase tracking-[1px]">SESSION TRADES</span>
+                  <span className="font-mono text-base font-bold text-fg">
+                    {session.trades.length} / {session.maxTrades}
+                  </span>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={handleLogTrade}
+                aria-label="Log trade with this card"
+                className="rounded-xl py-3 px-6 text-center text-xs font-bold tracking-[1.5px] uppercase transition-transform hover:scale-[1.01] active:scale-[0.99]"
+                style={{ backgroundColor: Colors.accentPrimary, color: Colors.bgPrimary }}
+              >
+                LOG TRADE WITH THIS CARD
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const catColor = categoryColors[card.category] ?? Colors.accentPrimary;
   const t1Score = tier1.filter((t) => t.checked).length;
